@@ -93,9 +93,6 @@ const OverlayHandler = {
     const awardSeparatorToggle = document.getElementById(`${libraryId}-collection_separator_award`)
     const chartSeparatorToggle = document.getElementById(`${libraryId}-collection_separator_chart`)
 
-    const awardTogglesChecked = document.querySelectorAll(`[id^="${libraryId}-awardCollectionsAccordion"] input[type="checkbox"]:checked`).length > 0
-    const chartTogglesChecked = document.querySelectorAll(`[id^="${libraryId}-chartCollectionsAccordion"] input[type="checkbox"]:checked`).length > 0
-
     const selectedValue = useSeparatorsDropdown.value
     const isEnabled = selectedValue !== 'none'
 
@@ -128,13 +125,15 @@ const OverlayHandler = {
     sepStyleInput.value = isEnabled ? selectedValue : ''
 
     if (awardSeparatorToggle) {
-      awardSeparatorToggle.disabled = !isEnabled || !awardTogglesChecked
-      awardSeparatorToggle.checked = isEnabled && awardTogglesChecked
+      // Only depend on sep_style being set to enable/disable
+      awardSeparatorToggle.disabled = !isEnabled
+      awardSeparatorToggle.checked = isEnabled
     }
 
     if (chartSeparatorToggle) {
-      chartSeparatorToggle.disabled = !isEnabled || !chartTogglesChecked
-      chartSeparatorToggle.checked = isEnabled && chartTogglesChecked
+      // Only depend on sep_style being set to enable/disable
+      chartSeparatorToggle.disabled = !isEnabled
+      chartSeparatorToggle.checked = isEnabled
     }
 
     const fieldId = `${libraryId}-template_variables[use_separator]`
@@ -227,3 +226,31 @@ document.addEventListener('DOMContentLoaded', function () {
     OverlayHandler.populateImdbDropdown(dropdown, libraryName, isMovie ? 'movie' : 'show', currentValue)
   })
 })
+
+// eslint-disable-next-line no-unused-vars
+function setupParentChildToggleSync () {
+  console.log('[DEBUG] Running setupParentChildToggleSync...')
+
+  document.querySelectorAll('input[data-template-group]').forEach(parent => {
+    const childToggles = document.querySelectorAll(`input[data-parent-toggle="${parent.id}"]`)
+    console.log(`[DEBUG] Found parent: ${parent.id} with ${childToggles.length} children`)
+
+    // 1. Parent change affects children
+    parent.addEventListener('change', () => {
+      const checked = parent.checked
+      console.log(`[DEBUG] Parent ${parent.id} changed to ${checked}`)
+      childToggles.forEach(child => {
+        if (!child.disabled) child.checked = checked
+      })
+    })
+
+    // 2. Children change affects parent
+    childToggles.forEach(child => {
+      child.addEventListener('change', () => {
+        const anyChecked = Array.from(childToggles).some(c => c.checked)
+        parent.checked = anyChecked
+        console.log(`[DEBUG] Child ${child.id} changed. Setting parent ${parent.id} to ${anyChecked}`)
+      })
+    })
+  })
+}

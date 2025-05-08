@@ -493,8 +493,8 @@ def update_env_variable(key, value):
             file.write(f"{key}={value}\n")
 
 
-def load_quickstart_sections():
-    json_path = os.path.join(JSON_SETTINGS, "quickstart_sections.json")
+def load_quickstart_config(filename: str):
+    json_path = os.path.join(JSON_SETTINGS, filename)
     with open(json_path, "r", encoding="utf-8") as f:
         return json.load(f)
 
