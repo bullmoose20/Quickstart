@@ -18,6 +18,7 @@ except ImportError:
 
 STRING_FIELDS = {"apikey", "token", "username", "password"}
 GITHUB_BASE_URL = "https://raw.githubusercontent.com/Kometa-Team/Kometa"
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "gif", "bmp"}
 
 BASE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 WORKING_DIR = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else BASE_DIR
@@ -55,10 +56,23 @@ def normalize_id(name, existing_ids):
     return safe_id
 
 
-def is_valid_aspect_ratio(image):
-    """Check if the image has an aspect ratio of approximately 1:1.5."""
+def is_valid_aspect_ratio(image, target_ratio="2:3", tolerance=0.01):
+    """Check if the image has an acceptable aspect ratio within a given tolerance."""
     width, height = image.size
-    return abs((width / height) - (2 / 3)) < 0.01  # Ensure it's approximately 1000x1500
+    actual_ratio = width / height
+
+    # Map aspect ratio strings to numeric values
+    ratio_map = {
+        "2:3": 2 / 3,
+        "1:1.5": 2 / 3,  # alias
+        "16:9": 16 / 9,
+    }
+
+    if target_ratio not in ratio_map:
+        raise ValueError(f"Unsupported target_ratio: {target_ratio}")
+
+    expected_ratio = ratio_map[target_ratio]
+    return abs(actual_ratio - expected_ratio) < tolerance
 
 
 def extract_library_name(key):
@@ -572,3 +586,7 @@ def find_item_by_imdb_id(library_name, imdb_id, media_type):
 
     item = results[0]
     return {"id": imdb_id, "title": item.title}
+
+
+def allowed_extensions_string():
+    return ", ".join(sorted(ALLOWED_EXTENSIONS))
