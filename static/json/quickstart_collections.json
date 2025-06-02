@@ -82,6 +82,36 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -468,6 +498,36 @@
                 "value": "show_items",
                 "label": "Show this Collection and its Items"
               }
+            ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
             ]
           },
           {
@@ -860,6 +920,36 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -1249,6 +1339,36 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -1635,6 +1755,36 @@
                 "value": "show_items",
                 "label": "Show this Collection and its Items"
               }
+            ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
             ]
           },
           {
@@ -2038,6 +2188,27 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -2436,6 +2607,27 @@
                 "label": "Show this Collection and its Items"
               }
             ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
           },
           {
             "key": "sort_by",
@@ -2864,6 +3056,27 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -3253,6 +3466,36 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -3639,6 +3882,36 @@
                 "value": "show_items",
                 "label": "Show this Collection and its Items"
               }
+            ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
             ]
           },
           {
@@ -4042,6 +4315,27 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -4428,6 +4722,36 @@
                 "value": "show_items",
                 "label": "Show this Collection and its Items"
               }
+            ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
             ]
           },
           {
@@ -4820,6 +5144,36 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -5206,6 +5560,36 @@
                 "value": "show_items",
                 "label": "Show this Collection and its Items"
               }
+            ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
             ]
           },
           {
@@ -5598,6 +5982,36 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -5984,6 +6398,36 @@
                 "value": "show_items",
                 "label": "Show this Collection and its Items"
               }
+            ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
             ]
           },
           {
@@ -6444,6 +6888,27 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -6883,6 +7348,27 @@
                 "label": "Show this Collection and its Items"
               }
             ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
           },
           {
             "key": "sort_by",
@@ -7349,6 +7835,27 @@
                 "label": "Show this Collection and its Items"
               }
             ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
           },
           {
             "key": "sort_by",
@@ -7864,6 +8371,27 @@
                 "label": "Show this Collection and its Items"
               }
             ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
           },
           {
             "key": "sort_by",
@@ -8383,6 +8911,27 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -8872,6 +9421,27 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -9349,6 +9919,52 @@
             "media_types": [
               "show"
             ]
+          },
+          {
+            "key": "collection_mode",
+            "label": "Collection Mode",
+            "type": "select",
+            "tooltip": "Controls the collection mode of all collections in a Defaults File.<br><br> Default is <b>Library Default</b> ",
+            "default": "default",
+            "options": [
+              {
+                "value": "default",
+                "label": "Library default"
+              },
+              {
+                "value": "hide",
+                "label": "Hide Collection"
+              },
+              {
+                "value": "hide_items",
+                "label": "Hide Items in this Collection"
+              },
+              {
+                "value": "show_items",
+                "label": "Show this Collection and its Items"
+              }
+            ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
           },
           {
             "key": "sort_by",
@@ -9991,6 +10607,36 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -10506,6 +11152,27 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -10886,6 +11553,27 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -11261,6 +11949,27 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -11634,6 +12343,27 @@
                 "label": "Show this Collection and its Items"
               }
             ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
           },
           {
             "key": "sort_by",
@@ -12400,6 +13130,27 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -12876,6 +13627,27 @@
                 "label": "Show this Collection and its Items"
               }
             ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
           },
           {
             "key": "sort_by",
@@ -13633,6 +14405,27 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -14004,6 +14797,27 @@
                 "label": "Show this Collection and its Items"
               }
             ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
           },
           {
             "key": "sort_by",
@@ -14380,6 +15194,27 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -14752,6 +15587,27 @@
                 "label": "Show this Collection and its Items"
               }
             ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
           },
           {
             "key": "sort_by",
@@ -15128,6 +15984,27 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -15500,6 +16377,27 @@
                 "label": "Show this Collection and its Items"
               }
             ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
           },
           {
             "key": "sort_by",
@@ -15876,6 +16774,27 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -16248,6 +17167,27 @@
                 "label": "Show this Collection and its Items"
               }
             ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
           },
           {
             "key": "sort_by",
@@ -16629,6 +17569,27 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -17000,6 +17961,27 @@
                 "label": "Show this Collection and its Items"
               }
             ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
           },
           {
             "key": "sort_by",
@@ -18000,6 +18982,27 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -18554,6 +19557,27 @@
                 "label": "Show this Collection and its Items"
               }
             ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
           },
           {
             "key": "sort_by",
@@ -19144,6 +20168,27 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -19518,6 +20563,27 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -19866,6 +20932,52 @@
           "show"
         ],
         "template_variables": [
+          {
+            "key": "collection_mode",
+            "label": "Collection Mode",
+            "type": "select",
+            "tooltip": "Controls the collection mode of all collections in a Defaults File.<br><br> Default is <b>Library Default</b> ",
+            "default": "default",
+            "options": [
+              {
+                "value": "default",
+                "label": "Library default"
+              },
+              {
+                "value": "hide",
+                "label": "Hide Collection"
+              },
+              {
+                "value": "hide_items",
+                "label": "Hide Items in this Collection"
+              },
+              {
+                "value": "show_items",
+                "label": "Show this Collection and its Items"
+              }
+            ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
           {
             "key": "sort_by",
             "label": "Sort By",
@@ -20239,6 +21351,27 @@
                 "label": "Show this Collection and its Items"
               }
             ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
           },
           {
             "key": "sort_by",
@@ -20623,6 +21756,27 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -20995,6 +22149,36 @@
                 "value": "show_items",
                 "label": "Show this Collection and its Items"
               }
+            ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
             ]
           },
           {
@@ -21373,6 +22557,36 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -21745,6 +22959,36 @@
                 "value": "show_items",
                 "label": "Show this Collection and its Items"
               }
+            ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
             ]
           },
           {
@@ -22547,6 +23791,32 @@
             ]
           },
           {
+            "key": "use_tubi",
+            "label": "tubi Movies/Shows",
+            "tooltip": "Collection of Movies/Shows Streaming on tubi.",
+            "type": "toggle"
+          },
+          {
+            "key": "radarr_add_missing_tubi",
+            "label": "Add missing items to Radarr",
+            "tooltip": "Add missing items to Radarr can generate a lot of internet traffic and disk space issues depending on the number of items missing in your library. <br> <b>Use with caution.</b> ",
+            "tooltip_variant": "danger",
+            "type": "toggle",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "sonarr_add_missing_tubi",
+            "label": "Add missing items to Sonarr",
+            "tooltip": "Add missing items to Sonarr can generate a lot of internet traffic and disk space issues depending on the number of items missing in your library. <br> <b>Use with caution.</b> ",
+            "tooltip_variant": "danger",
+            "type": "toggle",
+            "media_types": [
+              "show"
+            ]
+          },
+          {
             "key": "style",
             "label": "Style",
             "type": "select",
@@ -22581,6 +23851,27 @@
                 "label": "Show this Collection and its Items"
               }
             ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
           },
           {
             "key": "sort_by",
@@ -22955,6 +24246,27 @@
                 "label": "Show this Collection and its Items"
               }
             ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
           },
           {
             "key": "sort_by",
@@ -23341,6 +24653,27 @@
                 "label": "Show this Collection and its Items"
               }
             ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
           },
           {
             "key": "sort_by",
@@ -24026,6 +25359,36 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default",
+            "media_types": [
+              "movie"
+            ]
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -24398,6 +25761,27 @@
                 "label": "Show this Collection and its Items"
               }
             ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
           },
           {
             "key": "sort_by",
@@ -24773,6 +26157,27 @@
             ]
           },
           {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
             "key": "sort_by",
             "label": "Sort By",
             "type": "select",
@@ -25144,6 +26549,27 @@
                 "label": "Show this Collection and its Items"
               }
             ]
+          },
+          {
+            "key": "visible_home",
+            "label": "Visible Home",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Home Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_library",
+            "label": "Visible Library",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Library Recommended Tab (Only works with Plex Pass)",
+            "default": "default"
+          },
+          {
+            "key": "visible_shared",
+            "label": "Visible Shared",
+            "type": "toggle",
+            "tooltip": "Changes collection visible on Shared Users' Home Tab (Only works with Plex Pass)",
+            "default": "default"
           },
           {
             "key": "sort_by",

@@ -688,3 +688,62 @@ def get_library_summaries(configured_library_names):
 
     except Exception as e:
         return f"Plex library summary unavailable: {str(e)}"
+
+
+def get_plex_metadata():
+    try:
+        plex_url, plex_token = persistence.get_stored_plex_credentials("010-plex")
+        plex = PlexServer(plex_url, plex_token)
+
+        # Plex Pass
+        try:
+            plex_pass = plex.myPlexAccount().subscriptionActive
+        except Exception:
+            plex_pass = False
+
+        # Update Channel
+        try:
+            update_channel_value = plex.settings.get("butlerUpdateChannel").value
+            if update_channel_value == "16":
+                update_channel = "Public update channel"
+            elif update_channel_value == "8":
+                update_channel = "PlexPass update channel"
+            else:
+                update_channel = f"Unknown update channel (raw: {update_channel_value})"
+        except Exception:
+            update_channel = "Unknown update channel"
+
+        # Get per-library metadata
+        library_metadata = get_library_metadata()
+
+        # Return structured metadata
+        return {
+            "plex_pass": plex_pass,
+            "update_channel": update_channel,
+            "server_name": plex.friendlyName,
+            "version": plex.version,
+            "platform": plex.platform,
+            "libraries": library_metadata,
+        }
+
+    except Exception as e:
+        return {"plex_pass": False, "update_channel": None, "error": str(e), "libraries": {}}
+
+
+def get_library_metadata():
+    try:
+        plex_url, plex_token = persistence.get_stored_plex_credentials("010-plex")
+        plex = PlexServer(plex_url, plex_token)
+
+        library_data = {}
+        for section in plex.library.sections():
+            library_data[section.title] = {
+                "agent": section.agent,
+                "scanner": section.scanner,
+                "type": section.type,
+            }
+
+        return library_data
+
+    except Exception as e:
+        return {"error": str(e)}
