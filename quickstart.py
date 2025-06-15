@@ -111,7 +111,7 @@ def check_request_size():
         print(f"[DEBUG] Incoming request size: {request.content_length / 1024:.2f} KB")
 
     # Only applies to form-encoded POSTs
-    if request.method == "POST" and request.content_type.startswith("application/x-www-form-urlencoded"):
+    if request.method == "POST" and (request.content_type or "").startswith("application/x-www-form-urlencoded"):
         try:
             form_data = request.form  # triggers parsing
             print(f"[DEBUG] Form field count: {len(form_data)}")
@@ -388,10 +388,7 @@ def generate_preview():
             template_vars = overlay_entry.get("template_variables", {})
 
             # Normalize booleans to lowercase strings (e.g., True → "true")
-            template_vars = {
-                k: str(v).lower() if isinstance(v, bool) else v
-                for k, v in template_vars.items()
-            }
+            template_vars = {k: str(v).lower() if isinstance(v, bool) else v for k, v in template_vars.items()}
         else:
             continue  # skip invalid overlay data
 
