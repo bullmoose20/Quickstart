@@ -84,7 +84,7 @@
                 </div>
                 <div class="form-check form-check-inline">
                   <input class="form-check-input" type="radio" name="run-mode" value="python" id="runModePython" {% if
-                    version_info.running_on=="Local" %}checked{% endif %}>
+                    version_info.running_on.startswith("Local") %}checked{% endif %}>
                   <label class="form-check-label" for="runModePython">Local Python</label>
                 </div>
               </div>
@@ -244,9 +244,11 @@
     <!-- Command Output -->
     <div id="run-command-box" class="position-relative border rounded bg-body-tertiary p-3 mt-3 d-none">
       <p class="form-label">Command</p>
-      <pre class="mb-0"><code id="run-command-output"
-  data-config-filename="{{ page_info.saved_filename }}"
-  data-venv-python="{{ kometa_root | replace('\\', '\\\\') }}/kometa-venv/Scripts/python.exe"></code></pre>
+      <pre class="mb-0 text-wrap" style="white-space: pre-wrap; word-break: break-word;">
+  <code id="run-command-output"
+        data-config-filename="{{ page_info.saved_filename }}">
+  </code>
+</pre>
       <button type="button" id="copy-command"
         class="btn btn-outline-secondary btn-sm position-absolute top-0 end-0 m-2 d-flex align-items-center gap-2">
         <i class="bi bi-files" id="copy-icon"></i>
@@ -259,7 +261,9 @@
         <i class="bi bi-stop-fill me-1"></i> Stop
       </button>
       <div id="run-output" class="mt-3 d-none">
-        <p class="form-label">Output</p>
+        <small class="text-muted d-block mt-1">
+          <i class="bi bi-info-circle"></i> Showing last 2000 lines of the log
+        </small>
         <pre class="bg-dark text-light p-2 rounded" id="run-output-log"
           style="height: 300px; overflow-y: auto; overflow-x: auto; white-space: pre;">
         </pre>
