@@ -3,6 +3,7 @@ import platform
 import json
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 from plexapi.server import PlexServer
@@ -688,7 +689,10 @@ def get_library_summaries(configured_library_names):
                 scanner = matching_section.scanner or "Unknown"
                 lib_type = matching_section.type.capitalize()
 
-                ratings_setting = next((s for s in matching_section.settings() if s.id == "ratingsSource"), None)
+                ratings_setting = next(
+                    (s for s in matching_section.settings() if s.id == "ratingsSource"),
+                    None,
+                )
                 ratings_source = ratings_setting.enumValues[ratings_setting.value] if ratings_setting else "N/A"
 
                 output_lines.append(f"Information on library: {lib_name}")
@@ -780,7 +784,12 @@ def get_library_metadata():
         for section in plex.library.sections():
             try:
                 # Default metadata
-                lib_info = {"agent": section.agent, "scanner": section.scanner, "type": section.type, "ratings_source": "N/A"}
+                lib_info = {
+                    "agent": section.agent,
+                    "scanner": section.scanner,
+                    "type": section.type,
+                    "ratings_source": "N/A",
+                }
 
                 # Try to extract ratings source
                 try:
@@ -793,7 +802,12 @@ def get_library_metadata():
 
                 library_data[section.title] = lib_info
             except Exception as lib_err:
-                library_data[section.title] = {"agent": "Unknown", "scanner": "Unknown", "type": "Unknown", "ratings_source": f"Error: {lib_err}"}
+                library_data[section.title] = {
+                    "agent": "Unknown",
+                    "scanner": "Unknown",
+                    "type": "Unknown",
+                    "ratings_source": f"Error: {lib_err}",
+                }
 
         return library_data
 
@@ -840,3 +854,95 @@ def save_to_named_config(yaml_text, config_name):
 
     # Return POSIX-style filename (used for CLI path like --config config/name_config.yml)
     return latest_path.name
+
+
+def get_kometa_remote_version(branch="nightly"):
+    url = f"https://raw.githubusercontent.com/Kometa-Team/Kometa/{branch}/VERSION"
+    try:
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+        return response.text.strip()
+    except requests.RequestException:
+        return None
+
+
+def get_kometa_local_version(kometa_root=None):
+    if kometa_root is None:
+        kometa_root = Path(app.config.get("KOMETA_ROOT", "."))
+    else:
+        kometa_root = Path(kometa_root)
+
+    version_path = kometa_root / "VERSION"
+    if version_path.exists():
+        return version_path.read_text(encoding="utf-8").strip()
+    return "unknown"
+
+
+def check_kometa_update(kometa_root=None):
+    branch = get_kometa_branch()
+    local_version = get_kometa_local_version(kometa_root)
+    remote_version = get_kometa_remote_version(branch)
+    update_available = remote_version and remote_version != local_version
+
+    return {
+        "local_version": local_version,
+        "remote_version": remote_version,
+        "branch": branch,
+        "update_available": update_available,
+    }
+
+
+def perform_kometa_update(kometa_root):
+    logs = []
+    success = True
+
+    try:
+        kometa_root = Path(kometa_root).resolve()
+        is_windows = sys.platform.startswith("win")
+
+        venv_path = kometa_root / "kometa-venv"
+        pip_bin = venv_path / ("Scripts" if is_windows else "bin") / ("pip.exe" if is_windows else "pip")
+
+        # 1. Git pull
+        logs.append("🔄 Running: git pull")
+        result = subprocess.run(
+            ["git", "pull"],
+            cwd=kometa_root,
+            capture_output=True,
+            text=True,
+            shell=is_windows,
+        )
+        logs.append(result.stdout.strip() or "(no output)")
+        if result.returncode != 0:
+            logs.append(result.stderr.strip())
+            success = False
+
+        # 2. Pip install -r requirements.txt
+        if success:
+            logs.append("\n📦 Reinstalling requirements...")
+            pip_cmd = [
+                str(pip_bin),
+                "install",
+                "--no-cache-dir",
+                "--upgrade",
+                "-r",
+                "requirements.txt",
+            ]
+            result = subprocess.run(
+                pip_cmd,
+                cwd=kometa_root,
+                capture_output=True,
+                text=True,
+                shell=is_windows,
+            )
+            logs.append(result.stdout.strip() or "(no output)")
+            if result.returncode != 0:
+                logs.append(result.stderr.strip())
+                success = False
+
+        logs.append("\n✅ Update completed." if success else "\n❌ Update failed.")
+        return {"success": success, "log": logs}
+
+    except Exception as e:
+        logs.append(f"❌ Exception: {str(e)}")
+        return {"success": False, "log": logs}
