@@ -16,3 +16,7 @@ https
 chmod
 MacOS
 exe
+py
+venv
+txt
+scm
