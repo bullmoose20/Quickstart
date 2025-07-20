@@ -799,6 +799,13 @@ def step(name):
 
     start_time = time.perf_counter()
 
+    helpers.ts_log("[TIMING] Loading attribute_config...")
+    attribute_config = helpers.load_quickstart_config("quickstart_attributes.json")
+    helpers.ts_log("[TIMING] Loading collection_config...")
+    collection_config = helpers.load_quickstart_config("quickstart_collections.json")
+    helpers.ts_log("[TIMING] Loading overlay_config...")
+    overlay_config = helpers.load_quickstart_config("quickstart_overlays.json")
+
     if name == "900-final":
         validated, validation_error, config_data, yaml_content = output.build_config(header_style, config_name=config_name)
         saved_filename = helpers.save_to_named_config(yaml_content, config_name)
@@ -835,12 +842,6 @@ def step(name):
         return html
 
     else:
-        helpers.ts_log("[TIMING] Loading attribute_config...")
-        attribute_config = helpers.load_quickstart_config("quickstart_attributes.json")
-        helpers.ts_log("[TIMING] Loading collection_config...")
-        collection_config = helpers.load_quickstart_config("quickstart_collections.json")
-        helpers.ts_log("[TIMING] Loading overlay_config...")
-        overlay_config = helpers.load_quickstart_config("quickstart_overlays.json")
         helpers.ts_log("[TIMING] Loading quickstart_root...")
         page_info["quickstart_root"] = helpers.get_app_root()
         helpers.ts_log("[TIMING] Start render_template...")
