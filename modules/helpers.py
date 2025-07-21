@@ -39,6 +39,10 @@ os.makedirs(JSON_SCHEMA_DIR, exist_ok=True)
 HASH_FILE = os.path.join(JSON_SCHEMA_DIR, "file_hashes.txt")
 VERSION_FILE = os.path.join(MEIPASS_DIR, "VERSION")
 
+LOG_DIR = os.path.join("config", "logs")
+LOG_FILE = os.path.join(LOG_DIR, "quickstart.log")
+MAX_LOG_BACKUPS = 10
+
 
 def normalize_id(name, existing_ids):
     """Convert library names to safe and unique HTML IDs while preserving Unicode."""
@@ -171,7 +175,7 @@ def ensure_json_schema():
             new_hashes[filename] = new_hash
 
         except requests.RequestException as e:
-            ts_log(f"[ERROR] Failed to download {filename} from {url}: {e}")
+            ts_log(f"Failed to download {filename} from {url}: {e}", level="ERROR")
             continue  # Skip to the next file
 
     # Save updated hashes
@@ -407,7 +411,10 @@ def booler(thing):
             return False
         else:
             if app.config["QS_DEBUG"]:
-                ts_log(f"[DEBUG] Warning: Invalid boolean string encountered: {thing}. Defaulting to False.")
+                ts_log(
+                    f"Warning: Invalid boolean string encountered: {thing}. Defaulting to False.",
+                    level="DEBUG",
+                )
             return False
     return bool(thing)
 
@@ -533,16 +540,16 @@ def load_quickstart_config(filename: str):
 
 
 def get_top_imdb_items(library_id, media_type, placeholder_id=None):
-    ts_log(f"[DEBUG] Fetching Plex credentials for '010-plex'")
+    ts_log(f"Fetching Plex credentials for '010-plex'", level="DEBUG")
     plex_url, plex_token = persistence.get_stored_plex_credentials("010-plex")
 
-    ts_log(f"[DEBUG] Connecting to Plex with URL: {plex_url}")
+    ts_log(f"Connecting to Plex with URL: {plex_url}", level="DEBUG")
     plex = PlexServer(plex_url, plex_token)
 
     for section in plex.library.sections():
-        ts_log(f"[DEBUG] Section: key={section.key}, title={section.title}")
+        ts_log(f"Section: key={section.key}, title={section.title}", level="DEBUG")
 
-    ts_log(f"[DEBUG] Searching for section with ID or title: {library_id}")
+    ts_log(f"Searching for section with ID or title: {library_id}", level="DEBUG")
     section = next(
         (s for s in plex.library.sections() if str(s.key) == str(library_id) or s.title.lower() == str(library_id).lower()),
         None,
@@ -551,7 +558,7 @@ def get_top_imdb_items(library_id, media_type, placeholder_id=None):
     if not section:
         raise ValueError(f"Library ID {library_id} not found.")
 
-    ts_log(f"[DEBUG] Fetching items from '{section.title}' sorted by audienceRating")
+    ts_log(f"Fetching items from '{section.title}' sorted by audienceRating", level="DEBUG")
     items = section.search(sort="audienceRating:desc", maxresults=25)
 
     imdb_items = []
@@ -568,9 +575,12 @@ def get_top_imdb_items(library_id, media_type, placeholder_id=None):
     if placeholder_id and not any(x["id"] == placeholder_id for x in imdb_items):
         saved_item = find_item_by_imdb_id(library_id, placeholder_id, media_type)
         if saved_item:
-            ts_log(f"[DEBUG] Saved placeholder found separately: {saved_item['title']}")
+            ts_log(
+                f"Saved placeholder found separately: {saved_item['title']}",
+                level="DEBUG",
+            )
 
-    ts_log(f"[DEBUG] Returning {len(imdb_items)} IMDb items")
+    ts_log(f"Returning {len(imdb_items)} IMDb items", level="DEBUG")
     return imdb_items, saved_item
 
 
@@ -1013,6 +1023,95 @@ def get_app_root():
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-def ts_log(*args):
+def rotate_logs():
+    if not os.path.exists(LOG_FILE):
+        return
+
+    # Delete the oldest backup if it would exceed MAX_LOG_BACKUPS
+    oldest = os.path.join(LOG_DIR, f"quickstart-{MAX_LOG_BACKUPS:03}.log")
+    if os.path.exists(oldest):
+        os.remove(oldest)
+
+    # Rotate existing backups
+    for i in range(MAX_LOG_BACKUPS - 1, 0, -1):
+        src = os.path.join(LOG_DIR, f"quickstart-{i:03}.log")
+        dst = os.path.join(LOG_DIR, f"quickstart-{i+1:03}.log")
+        if os.path.exists(src):
+            if os.path.exists(dst):
+                os.remove(dst)
+            os.rename(src, dst)
+
+    # Rotate the current log to quickstart-001.log
+    dst = os.path.join(LOG_DIR, "quickstart-001.log")
+    if os.path.exists(dst):
+        os.remove(dst)
+    os.rename(LOG_FILE, dst)
+
+
+def initialize_logging():
+    os.makedirs(LOG_DIR, exist_ok=True)
+    rotate_logs()
+    with open(LOG_FILE, "w", encoding="utf-8") as f:
+        ts_log(f"New log started at {datetime.datetime.now()}", level="INFO")
+
+
+def redact_string(text):
+    redacted = text
+    sensitive_keys = [
+        "token",
+        "access_token",
+        "refresh_token",
+        "authorization",
+        "api_key",
+        "apikey",
+        "auth",
+        "secret",
+        "client_id",
+        "client_secret",
+        "plex_token",
+        "password",
+        "pin",
+        "username",
+    ]
+
+    for key in sensitive_keys:
+        key_escaped = re.escape(key)
+
+        patterns = [
+            # JSON-style quoted
+            (rf'("{key_escaped}"\s*:\s*")[^"]*(")', r"\1(redacted)\2"),
+            (rf"('{key_escaped}'\s*:\s*')[^']*(')", r"\1(redacted)\2"),
+            # Dict-style key = value
+            (rf"({key_escaped}\s*=\s*)[^\s,}}]+", r"\1(redacted)"),
+            # YAML/Python-style key: value
+            (rf"({key_escaped}\s*:\s*)[^\s,}}]+", r"\1(redacted)"),
+            # JSON bare/null values
+            (rf"({key_escaped}['\"]?\s*:\s*)(None|null)", r"\1(redacted)"),
+        ]
+
+        for pattern, repl in patterns:
+            redacted = re.sub(pattern, repl, redacted, flags=re.IGNORECASE)
+
+    return redacted
+
+
+def ts_log(*args, level="INFO"):
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S,%f")[:-3]
-    print(f"[{now}]", *args)
+    level_str = f"[{level}]"
+    padding = " " * (10 - len(level_str))  # Pad to align
+    message = " ".join(str(arg) for arg in args)
+
+    # Console (NOT redacted)
+    line_console = f"[{now}] {level_str}{padding}| {message}"
+    print(line_console)
+
+    # File (redacted)
+    redacted_msg = redact_string(message)
+    line_file = f"[{now}] {level_str}{padding}| {redacted_msg}"
+
+    try:
+        os.makedirs(LOG_DIR, exist_ok=True)
+        with open(LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(line_file + "\n")
+    except Exception:
+        pass
