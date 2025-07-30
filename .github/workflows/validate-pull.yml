@@ -288,6 +288,11 @@ jobs:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_TOKEN }}
 
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Print Links
         run: |
           echo "${{ needs.build-executable.outputs.windows }}"
@@ -311,13 +316,13 @@ jobs:
           fi
           
           tag_pattern="<!--windows_url-->"
-          mod_str=$(echo "$PR_BODY" | sed -E "s#${tag_pattern}.*?${tag_pattern}#${tag_pattern}${replacement_text}${tag_pattern}#")
+          mod_str=$(echo "$PR_BODY" | sed -E "s#${tag_pattern}.*?${tag_pattern}#${tag_pattern}${{ needs.build-executable.outputs.windows }}${tag_pattern}#")
           
           tag_pattern="<!--macos_url-->"
-          mod_str2=$(echo "$mod_str" | sed -E "s#${tag_pattern}.*?${tag_pattern}#${tag_pattern}${replacement_text}${tag_pattern}#")
+          mod_str2=$(echo "$mod_str" | sed -E "s#${tag_pattern}.*?${tag_pattern}#${tag_pattern}${{ needs.build-executable.outputs.ubuntu }}${tag_pattern}#")
           
           tag_pattern="<!--ubuntu_url-->"
-          mod_str3=$(echo "$mod_str2" | sed -E "s#${tag_pattern}.*?${tag_pattern}#${tag_pattern}${replacement_text}${tag_pattern}#")
+          mod_str3=$(echo "$mod_str2" | sed -E "s#${tag_pattern}.*?${tag_pattern}#${tag_pattern}${{ needs.build-executable.outputs.macos }}${tag_pattern}#")
           
           echo "$mod_str3"
           
