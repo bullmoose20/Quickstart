@@ -1455,8 +1455,7 @@ def clone_test_libraries():
                 return jsonify(success=True, message="Test libraries updated successfully.")
             except InvalidGitRepositoryError:
                 return jsonify(
-                    success=False,
-                    message="The 'plex_test_libraries' folder exists but is not a valid Git repository.\nPlease delete or rename the folder and try again."
+                    success=False, message="The 'plex_test_libraries' folder exists but is not a valid Git repository.\nPlease delete or rename the folder and try again."
                 )
             except GitCommandError as e:
                 return jsonify(success=False, message=f"Git pull failed:\n{str(e)}")
@@ -1537,7 +1536,7 @@ if __name__ == "__main__":
 
     if not has_tray:
         # Headless mode: skip system tray
-        helpers.ts_log(f"Running in headless mode — no system tray will be shown...", level="INFO")
+        helpers.ts_log(f"Running in headless mode — no system tray will be shown.", level="INFO")
         if app.config["QUICKSTART_DOCKER"]:
             helpers.ts_log(f"Quickstart is Running inside Docker.", level="INFO")
             helpers.ts_log(f"Access it at http://<your-server-ip>:{running_port}", level="INFO")
