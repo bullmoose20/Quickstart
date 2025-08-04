@@ -196,16 +196,15 @@ document.addEventListener('DOMContentLoaded', function () {
       })
         .then(res => res.json())
         .then(data => {
+          const pathHtml = data.target_path ? `<br><code>${data.target_path}</code>` : ''
           if (!data.found) {
-            // Folder doesn't exist → show clone banner
             testLibStatus.classList.remove('d-none')
           } else if (data.found && data.is_git_repo) {
-            // Folder exists and is a git repo → show permanent success message and silently pull
             testLibStatus.classList.remove('d-none', 'alert-warning', 'alert-danger')
             testLibStatus.classList.add('alert-success')
-            testLibStatus.innerHTML = '<strong>✅ Test libraries already set up.</strong>'
+            testLibStatus.innerHTML = `<strong>✅ Test libraries already set up.</strong>${pathHtml}`
 
-            // Folder exists and is a git repo → silently pull
+            // silently pull
             fetch('/clone-test-libraries', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -223,10 +222,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
               })
               .catch(err => showToast('error', `Update failed: ${err.message}`))
+          } else if ((isDocker || isFrozen) && data.found && !data.is_git_repo) {
+            testLibStatus.classList.remove('d-none', 'alert-warning', 'alert-danger')
+            testLibStatus.classList.add('alert-success')
+            testLibStatus.innerHTML = `<strong>✅ Test libraries already set up (ZIP install).</strong>${pathHtml}`
           } else {
-            // Folder exists but not a git repo → show error banner
             testLibStatus.classList.remove('d-none')
-            testLibStatus.classList.remove('alert-warning')
+            testLibStatus.classList.remove('alert-warning', 'alert-success')
             testLibStatus.classList.add('alert-danger')
             testLibStatus.innerHTML = `
             <strong>⚠️ Existing folder is not a git repo.</strong>
@@ -238,7 +240,13 @@ document.addEventListener('DOMContentLoaded', function () {
       // Manual clone button
       cloneBtn.addEventListener('click', () => {
         cloneBtn.disabled = true
-        cloneBtn.innerHTML = 'Cloning...'
+        cloneBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Downloading test media (~7GB)...'
+
+        let toastCounter = 0
+        const toastInterval = setInterval(() => {
+          toastCounter += 1
+          showToast('info', `Still downloading test libraries... (${toastCounter * 30} seconds elapsed)`)
+        }, 30000)
 
         fetch('/clone-test-libraries', {
           method: 'POST',
@@ -250,18 +258,27 @@ document.addEventListener('DOMContentLoaded', function () {
         })
           .then(res => res.json())
           .then(result => {
+            clearInterval(toastInterval)
+            cloneBtn.innerHTML = 'Clone Again'
+            cloneBtn.disabled = false
+
+            const pathHtml = result.target_path ? `<br><code>${result.target_path}</code>` : ''
             if (result.success) {
-              testLibStatus.classList.remove('alert-warning')
+              testLibStatus.classList.remove('alert-warning', 'alert-danger')
               testLibStatus.classList.add('alert-success')
-              testLibStatus.innerHTML = `<strong>✅ ${result.message}</strong>`
+              testLibStatus.innerHTML = `<strong>✅ ${result.message}</strong>${pathHtml}`
             } else {
-              testLibStatus.classList.remove('alert-warning')
+              testLibStatus.classList.remove('alert-warning', 'alert-success')
               testLibStatus.classList.add('alert-danger')
               testLibStatus.innerHTML = `<strong>❌ ${result.message}</strong>`
             }
           })
           .catch(err => {
-            testLibStatus.classList.remove('alert-warning')
+            clearInterval(toastInterval)
+            cloneBtn.innerHTML = 'Clone Again'
+            cloneBtn.disabled = false
+
+            testLibStatus.classList.remove('alert-warning', 'alert-success')
             testLibStatus.classList.add('alert-danger')
             testLibStatus.innerHTML = `<strong>❌ Clone failed:</strong> ${err.message}`
           })
