@@ -48,6 +48,10 @@ Request.max_form_parts = 100000  # Allow more form fields if needed
 
 from flask_session import Session
 from modules import validations, output, persistence, helpers, database
+from typing import Dict, Any
+
+# A very simple in-memory progress store
+CLONE_PROGRESS: Dict[str, Dict[str, Any]] = {}
 
 DOTENV = os.path.relpath(os.path.join(helpers.CONFIG_DIR, ".env"))
 load_dotenv(DOTENV, override=True)
@@ -864,6 +868,7 @@ def step(name):
             available_configs=available_configs,
             movie_libraries=movie_libraries,
             show_libraries=show_libraries,
+            config_dir=str(Path(helpers.CONFIG_DIR).resolve()),
         )
 
         end_time = time.perf_counter()
@@ -895,6 +900,7 @@ def step(name):
                 "season": os.listdir(UPLOAD_FOLDERS["season"]),
                 "episode": os.listdir(UPLOAD_FOLDERS["episode"]),
             },
+            config_dir=str(Path(helpers.CONFIG_DIR).resolve()),
         )
 
         end_time = time.perf_counter()
@@ -1151,10 +1157,8 @@ def shutdown():
 
 @app.route("/start-kometa", methods=["POST"])
 def start_kometa():
-    data = request.get_json()
-    command = data.get("command")
-    kometa_root = app.config["KOMETA_ROOT"]
-
+    data = request.get_json() or {}
+    command = data.get("command", "").strip()
     if not command:
         return jsonify({"error": "No command provided"}), 400
 
@@ -1162,26 +1166,45 @@ def start_kometa():
         pid = helpers.get_kometa_pid()
         try:
             proc = psutil.Process(pid)
-            start_time = proc.create_time()
-            start_iso = datetime.fromtimestamp(start_time).isoformat()
-            return jsonify({"error": f"Kometa is already running (PID: {pid}) since {start_iso}.", "status": "running", "pid": pid, "started_at": start_iso}), 400
+            started_at = datetime.fromtimestamp(proc.create_time()).isoformat()
+            return jsonify({"error": f"Kometa is already running (PID: {pid}) since {started_at}.", "status": "running", "pid": pid, "started_at": started_at}), 400
         except Exception:
             return jsonify({"error": f"Kometa is already running (PID: {pid}).", "status": "running", "pid": pid}), 400
 
-    if sys.platform.startswith("win"):
-        venv_python = os.path.join(kometa_root, "kometa-venv", "Scripts", "python.exe")
-    else:
-        venv_python = os.path.join(kometa_root, "kometa-venv", "bin", "python3")
+    kometa_root = helpers.get_kometa_root_path()  # ✅ unified source of truth
+    is_win = sys.platform.startswith("win")
+    venv_python = kometa_root / "kometa-venv" / ("Scripts" if is_win else "bin") / ("python.exe" if is_win else "python3")
+    kometa_py = kometa_root / "kometa.py"
+
+    if not kometa_py.exists():
+        return jsonify({"error": f"kometa.py not found at: {kometa_py}"}), 404
+    if not venv_python.exists():
+        return jsonify({"error": f"Kometa venv python not found at: {venv_python}"}), 500
 
     try:
-        command_parts = shlex.split(command)
-        if os.path.basename(command_parts[0]).lower() in ["python", "python3", "python.exe"]:
-            command_parts.pop(0)
-        command_parts.insert(0, venv_python)
+        # Use posix=False so Windows backslashes/quotes are preserved
+        command_parts = shlex.split(command, posix=not is_win)
 
-        proc = subprocess.Popen(command_parts, cwd=kometa_root, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        # Clean up double-wrapped args (affects --run-libraries, --times, etc.)
+        helpers.normalize_cli_args_inplace(command_parts)
 
-        with open(helpers.get_kometa_pid_file(), "w") as f:
+        # If the UI-built command already starts with python, replace it with our venv python
+        if command_parts and os.path.basename(command_parts[0]).lower() in {"python", "python3", "python.exe"}:
+            command_parts[0] = str(venv_python)
+        else:
+            command_parts.insert(0, str(venv_python))
+
+        # Make sure kometa.py is the script, even if the UI command omitted it
+        if not any(p.endswith("kometa.py") for p in command_parts):
+            command_parts.insert(1, str(kometa_py))
+
+        helpers.normalize_flag_values(command_parts)
+
+        helpers.ts_log(f"argv={command_parts!r}", level="DEBUG")
+
+        proc = subprocess.Popen(command_parts, cwd=str(kometa_root), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+
+        with open(helpers.get_kometa_pid_file(), "w", encoding="utf-8") as f:
             f.write(str(proc.pid))
 
         return jsonify({"status": "Kometa started", "pid": proc.pid})
@@ -1192,28 +1215,56 @@ def start_kometa():
 @app.route("/stop-kometa", methods=["POST"])
 def stop_kometa():
     pid = helpers.get_kometa_pid()
+    pid_file = helpers.get_kometa_pid_file()
 
     if not pid:
         return jsonify({"warning": "No active Kometa PID"}), 200
 
     try:
         proc = psutil.Process(pid)
-        for child in proc.children(recursive=True):
+
+        # Ensure this really looks like a Kometa run before killing
+        cmdline = " ".join(proc.cmdline() or [])
+        if "kometa.py" not in cmdline:
             try:
-                child.kill()
-            except psutil.NoSuchProcess:
-                continue
-        proc.kill()
+                os.remove(pid_file)
+            except Exception:
+                pass
+            return jsonify({"warning": f"PID {pid} is not a Kometa process. Cleaned PID file."}), 200
 
-        pid_file = helpers.get_kometa_pid_file()
-        if os.path.exists(pid_file):
+        # First try graceful termination
+        try:
+            proc.terminate()  # POSIX: SIGTERM, Windows: TerminateProcess
+        except psutil.NoSuchProcess:
+            pass
+
+        gone, alive = psutil.wait_procs([proc], timeout=3)
+        if alive:
+            # Kill children then parent as a fallback
+            for child in proc.children(recursive=True):
+                try:
+                    child.kill()
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    continue
+            try:
+                proc.kill()
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                pass
+
+        # Cleanup PID file regardless
+        try:
             os.remove(pid_file)
+        except Exception:
+            pass
 
-        return jsonify({"success": True, "message": "Kometa stopped"}), 200
+        return jsonify({"success": True, "message": "Kometa stopped (or was not running)."}), 200
+
     except psutil.NoSuchProcess:
-        pid_file = helpers.get_kometa_pid_file()
-        if os.path.exists(pid_file):
+        # Process already gone; just clean up PID file
+        try:
             os.remove(pid_file)
+        except Exception:
+            pass
         return jsonify({"warning": "Process not found. Cleaned up PID file."}), 200
     except Exception as e:
         return jsonify({"error": f"Failed to stop Kometa: {str(e)}"}), 500
@@ -1227,26 +1278,43 @@ def kometa_status():
 
     try:
         proc = psutil.Process(pid)
-        if proc.is_running() and "kometa.py" in " ".join(proc.cmdline()):
-            return jsonify(status="running", pid=pid)
-        else:
-            return jsonify(status="done", return_code=proc.wait(timeout=1))
+        # psutil can raise if finished between checks
+        if proc.is_running() and proc.status() != psutil.STATUS_ZOMBIE:
+            # Extra guard: ensure it's actually kometa.py
+            cmdline = " ".join(proc.cmdline() or [])
+            if "kometa.py" in cmdline:
+                return jsonify(status="running", pid=pid)
+        # If we’re here, it likely ended; try to get a return code
+        try:
+            rc = proc.wait(timeout=0.1)
+        except psutil.TimeoutExpired:
+            rc = None
+        finally:
+            # Clean PID if no longer an active kometa proc
+            try:
+                os.remove(helpers.get_kometa_pid_file())
+            except Exception:
+                pass
+        return jsonify(status="done", return_code=rc if rc is not None else -1)
     except psutil.NoSuchProcess:
-        pid_file = helpers.get_kometa_pid_file()
-        if os.path.exists(pid_file):
-            os.remove(pid_file)
+        try:
+            os.remove(helpers.get_kometa_pid_file())
+        except Exception:
+            pass
         return jsonify(status="not started")
 
 
 @app.route("/tail-log")
 def tail_log():
-    kometa_root = Path(app.config.get("KOMETA_ROOT", "."))
+    kometa_root = helpers.get_kometa_root_path()
     log_path = kometa_root / "config" / "logs" / "meta.log"
 
     if not log_path.exists():
-        return jsonify({"error": "Log file not found"}), 404
+        return jsonify({"error": f"Log file not found at: {log_path}"}), 404
 
     try:
+        from collections import deque
+
         with log_path.open("r", encoding="utf-8", errors="replace") as f:
             last_2000 = deque(f, maxlen=2000)
         return jsonify({"log": "".join(last_2000)})
@@ -1263,12 +1331,39 @@ def validate_kometa_root():
         print(msg, file=sys.stderr)
         logs.append(msg)
 
-    # External tool check — fail early if missing
+    if not root_path:
+        log("❌ No path provided.")
+        return jsonify(success=False, error="No path provided.", log=logs), 400
+
+    p = Path(root_path).resolve()
+
+    session["kometa_root"] = p.as_posix()
+    app.config["KOMETA_ROOT"] = str(p)
+
+    # Auto-create the Kometa root and config/ if missing
+    if not p.exists():
+        try:
+            p.mkdir(parents=True, exist_ok=True)
+            log(f"📁 Created Kometa root: {p}")
+        except Exception as e:
+            log(f"❌ Failed to create Kometa root: {e}")
+            return jsonify(success=False, error="Failed to create Kometa root.", log=logs), 500
+
+    try:
+        (p / "config").mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        log(f"❌ Failed to create config folder: {e}")
+        return jsonify(success=False, error="Failed to create config folder.", log=logs), 500
+
+    # Keep POSIX (internal) and native (display) versions
+    kometa_root_posix = p.as_posix()
+    kometa_root_display = str(p)  # native (Windows => backslashes)
+    session["kometa_root"] = kometa_root_posix  # store normalized internally
+
+    log(f"🔍 Checking path: {kometa_root_display}")
+
+    # --- External tool check (python is required) ---
     missing_tools = []
-
-    if shutil.which("git") is None:
-        missing_tools.append("git")
-
     if shutil.which("python") is None and shutil.which("python3") is None:
         missing_tools.append("python or python3")
 
@@ -1279,7 +1374,7 @@ def validate_kometa_root():
 
     log("✅ All required external tools are available.")
 
-    # Check Python version
+    # Python version (best-effort)
     try:
         python_cmd = shutil.which("python") or shutil.which("python3")
         version_output = subprocess.check_output([python_cmd, "--version"], stderr=subprocess.STDOUT, text=True)
@@ -1287,29 +1382,16 @@ def validate_kometa_root():
     except Exception as e:
         log(f"⚠️ Failed to detect Python version: {e}")
 
-    # Check Git version
+    # Git version (optional/best-effort)
     try:
         git_output = subprocess.check_output(["git", "--version"], stderr=subprocess.STDOUT, text=True)
         log(f"🔧 Detected Git version: {git_output.strip()}")
     except Exception as e:
         log(f"⚠️ Failed to detect Git version: {e}")
 
-    if not root_path:
-        log("❌ No path provided.")
-        return jsonify(success=False, error="No path provided.", log=logs), 400
-
-    kometa_root = Path(root_path)
-    session["kometa_root"] = str(kometa_root)
-    log(f"🔍 Checking path: {kometa_root}")
-
-    if not kometa_root.exists():
-        log("❌ Path does not exist.")
-        return jsonify(success=False, error="Path does not exist.", log=logs), 400
-
-    # Read Kometa VERSION file
-    version_path = kometa_root / "VERSION"
+    # --- Kometa files check (if you're expecting them to already be present) ---
     kometa_version = "Unknown"
-
+    version_path = p / "VERSION"
     if version_path.exists():
         try:
             kometa_version = version_path.read_text(encoding="utf-8").strip()
@@ -1319,14 +1401,15 @@ def validate_kometa_root():
 
     required_files = ["kometa.py", "requirements.txt"]
     for fname in required_files:
-        fpath = kometa_root / fname
+        fpath = p / fname
         if not fpath.exists():
             log(f"❌ Required file missing: {fname}")
             return jsonify(success=False, error=f"{fname} not found.", log=logs), 400
         log(f"✔️ Found required file: {fname}")
 
+    # --- Virtualenv & deps under <root>/kometa-venv ---
     is_windows = sys.platform.startswith("win")
-    venv_dir = kometa_root / "kometa-venv"
+    venv_dir = p / "kometa-venv"
     bin_dir = venv_dir / ("Scripts" if is_windows else "bin")
     python_bin = bin_dir / ("python.exe" if is_windows else "python")
     pip_bin = bin_dir / ("pip.exe" if is_windows else "pip")
@@ -1350,10 +1433,7 @@ def validate_kometa_root():
     try:
         result = subprocess.run([str(python_bin), "-m", "pip", "install", "--upgrade", "pip"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, check=True)
         output = result.stdout.strip()
-        if "Requirement already satisfied" in output:
-            log("ℹ️ pip is already up to date.")
-        else:
-            log("✅ pip upgraded.")
+        log("ℹ️ pip is already up to date." if "Requirement already satisfied" in output else "✅ pip upgraded.")
         for line in output.splitlines():
             log(f"    {line}")
     except subprocess.CalledProcessError as e:
@@ -1363,30 +1443,29 @@ def validate_kometa_root():
     log("📦 Installing requirements.txt...")
     try:
         result = subprocess.run(
-            [str(python_bin), "-m", "pip", "install", "-r", str(kometa_root / "requirements.txt")], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, check=True
+            [str(python_bin), "-m", "pip", "install", "-r", str(p / "requirements.txt")], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, check=True
         )
         output = result.stdout.strip()
-        if "Requirement already satisfied" in output and "Successfully installed" not in output:
-            log("ℹ️ All requirements are already satisfied.")
-        else:
-            log("✅ requirements.txt installed or updated.")
+        log(
+            "ℹ️ All requirements are already satisfied."
+            if "Requirement already satisfied" in output and "Successfully installed" not in output
+            else "✅ requirements.txt installed or updated."
+        )
         for line in output.splitlines():
             log(f"    {line}")
     except subprocess.CalledProcessError as e:
         log(f"❌ Error installing requirements: {str(e)}")
         return jsonify(success=False, error="Failed pip install.", log=logs), 500
 
+    # Copy generated YAML into <root>/config/<file>
     config_name = request.json.get("config_name", "kometa")
     src_yaml = Path("config") / f"{config_name}"
-
     if not src_yaml.exists():
         log(f"❌ Source YAML does not exist: {src_yaml}")
         return jsonify(success=False, error="Generated YAML not found.", log=logs), 500
 
-    dest_yaml = kometa_root / "config" / f"{config_name}"
-
+    dest_yaml = p / "config" / f"{config_name}"
     try:
-        os.makedirs(dest_yaml.parent, exist_ok=True)
         shutil.copy2(src_yaml, dest_yaml)
         log(f"✅ YAML copied to Kometa config folder at: {dest_yaml}")
     except Exception as e:
@@ -1394,15 +1473,21 @@ def validate_kometa_root():
 
     log("✅ Kometa root is valid and ready.")
 
-    kometa_update_info = helpers.check_kometa_update(kometa_root)
+    kometa_update_info = helpers.check_kometa_update(p)
     if kometa_update_info["update_available"]:
         log(f"⬆️ Update available: {kometa_update_info['local_version']} → {kometa_update_info['remote_version']}")
     else:
         log(f"✅ Kometa is up to date: {kometa_update_info['local_version']}")
+
     return (
         jsonify(
             success=True,
-            kometa_root=str(kometa_root),
+            # internal normalized for any future backend use
+            kometa_root=kometa_root_posix,
+            venv_python=python_bin.as_posix(),
+            # native-display for UI/command builder
+            kometa_root_display=kometa_root_display,
+            venv_python_display=str(python_bin),
             kometa_version=kometa_version,
             local_version=kometa_update_info["local_version"],
             remote_version=kometa_update_info["remote_version"],
@@ -1415,39 +1500,27 @@ def validate_kometa_root():
 
 @app.route("/update-kometa", methods=["POST"])
 def update_kometa():
+    # hard-stop if Kometa is running
+    if helpers.is_kometa_running():
+        pid = helpers.get_kometa_pid()
+        return jsonify({"success": False, "error": f"Kometa is currently running (PID {pid}). Stop it before updating."}), 409
     logs = []
     try:
-        kometa_root = session.get("kometa_root") or app.config.get("KOMETA_ROOT")
-        if not kometa_root:
-            logs.append("Kometa root path is not set.")
-            return jsonify({"success": False, "log": logs}), 400
+        cfg_dir = helpers.CONFIG_DIR
 
-        # Read request JSON first
+        # (optional) allow the caller to pass qs branch; otherwise detect from repo
         data = request.get_json(silent=True) or {}
+        qs_branch = data.get("branch") or helpers.detect_git_branch(app.root_path)
+        kometa_branch = "master" if qs_branch == "master" else "nightly"
 
-        # Get QS branch from request (default master). If you prefer auto-detect, swap this line
-        qs_branch = data.get("branch", "master")
         logs.append(f"🔎 Quickstart branch: {qs_branch}")
+        logs.append(f"⚙️ Kometa branch selected: {kometa_branch} (ZIP mode)")
 
-        # Policy: QS develop → Kometa nightly; otherwise Kometa master (unless overridden below)
-        if qs_branch == "master":
-            kometa_branch = "master"
-            logs.append("ℹ️ Policy: QS is 'master' → using Kometa 'master'.")
-        else:
-            kometa_branch = "nightly"
-            logs.append("ℹ️ Policy: QS is not 'master' → using Kometa 'nightly'.")
-
-        # Optional override from request (but never override the 'develop'→'nightly' rule)
-        override = data.get("kometa_branch")
-        if override and qs_branch != "develop":
-            kometa_branch = override
-            logs.append(f"🛠 Override: using Kometa branch '{kometa_branch}' from request.")
-
-        result = helpers.perform_kometa_update(kometa_root, branch=kometa_branch)
+        result = helpers.perform_kometa_update_zip_only(cfg_dir, branch=kometa_branch)
         logs.extend(result.get("log", []))
         status = 200 if result.get("success") else 500
 
-        return jsonify({"success": result.get("success", False), "log": logs, "qs_branch": qs_branch, "kometa_branch_effective": kometa_branch}), status
+        return jsonify({"success": result.get("success", False), "log": logs, "qs_branch": qs_branch, "kometa_branch": kometa_branch}), status
 
     except Exception as e:
         logs.append(f"Exception during Kometa update: {e}")
@@ -1458,70 +1531,230 @@ def update_kometa():
 def check_test_libraries():
     data = request.get_json(silent=True) or {}
     quickstart_root = data.get("quickstart_root", "")
-    use_config_dir = data.get("use_config_dir", False)
-
+    # legacy flag ignored; we always use the config dir now
     if not quickstart_root:
         return jsonify(success=False, message="Quickstart root path not provided.")
 
-    if use_config_dir:
-        base_config_dir = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else quickstart_root
-        target_path = os.path.join(base_config_dir, "config", "plex_test_libraries")
-    else:
-        parent_dir = os.path.dirname(quickstart_root)
-        target_path = os.path.join(parent_dir, "plex_test_libraries")
-
+    # Always use config/<plex_test_libraries>
+    base_config_dir = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else quickstart_root
+    target_path = os.path.join(base_config_dir, "config", "plex_test_libraries")
     resolved_path = os.path.abspath(target_path)
-    found = os.path.isdir(target_path)
-    has_expected_folders = all(os.path.isdir(os.path.join(target_path, name)) for name in ["test_tv_lib", "test_movie_lib"])
 
-    is_git_repo = False
+    found = os.path.isdir(target_path)
+    has_expected = all(os.path.isdir(os.path.join(target_path, name)) for name in ["test_tv_lib", "test_movie_lib"])
+
     local_sha = ""
     remote_sha = ""
     is_outdated = False
 
-    if found:
-        # Try to import GitPython safely
-        try:
-            os.environ["GIT_PYTHON_REFRESH"] = "quiet"
-            from git import Repo, InvalidGitRepositoryError, GitCommandError
-
+    if found and has_expected:
+        sha_path = os.path.join(target_path, ".test_libraries_version")
+        if os.path.exists(sha_path):
             try:
-                _ = Repo(target_path).git_dir
-                is_git_repo = True
-            except (InvalidGitRepositoryError, GitCommandError, OSError):
-                is_git_repo = False
-        except ImportError:
-            is_git_repo = False
-
-        # Check ZIP SHA version if not a git repo
-        if not is_git_repo:
-            sha_path = os.path.join(target_path, ".test_libraries_version")
-            if os.path.exists(sha_path):
-                try:
-                    with open(sha_path, "r") as f:
-                        local_sha = f.read().strip()
-                except Exception:
-                    local_sha = ""
-
-                try:
-                    commit_info = requests.get("https://api.github.com/repos/chazlarson/plex-test-libraries/commits/main", timeout=5).json()
-                    remote_sha = commit_info.get("sha", "")[:7]
-                except Exception:
-                    remote_sha = ""
-
-                if local_sha and remote_sha and local_sha != remote_sha:
-                    is_outdated = True
+                with open(sha_path, "r") as f:
+                    local_sha = f.read().strip()
+            except Exception:
+                local_sha = ""
+            try:
+                commit_info = requests.get(
+                    "https://api.github.com/repos/chazlarson/plex-test-libraries/commits/main",
+                    timeout=5,
+                ).json()
+                remote_sha = commit_info.get("sha", "")[:7]
+            except Exception:
+                remote_sha = ""
+            if local_sha and remote_sha and local_sha != remote_sha:
+                is_outdated = True
 
     return jsonify(
         {
-            "found": found and (has_expected_folders or is_git_repo),
-            "is_git_repo": is_git_repo,
+            "found": bool(found and has_expected),
             "target_path": resolved_path,
             "is_outdated": is_outdated,
             "local_sha": local_sha,
             "remote_sha": remote_sha,
         }
     )
+
+
+@app.route("/clone-test-libraries-start", methods=["POST"])
+def clone_test_libraries_start():
+    """
+    Starts a background job to download and install plex_test_libraries,
+    reporting rich progress via CLONE_PROGRESS[job_id].
+
+    Progress payload shapes by phase:
+      download: {"phase":"download","pct":<int|None>,"text":str,"downloaded":int,"total":int}
+      extract : {"phase":"extract","pct":int,"text":str,"files_done":int,"files_total":int}
+      finalize: {"phase":"finalize","pct":int,"text":str}
+      done    : {"phase":"done","pct":100,"text":str,"target_path":str}
+      error   : {"phase":"error","pct":0,"text":str}
+    """
+    data = request.get_json(silent=True) or {}
+    quickstart_root = data.get("quickstart_root", "")
+    use_config_dir = True  # always managed
+
+    if not quickstart_root:
+        return jsonify(success=False, message="Quickstart root path not provided.")
+
+    # Resolve target path (managed/config dir)
+    base_config_dir = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else quickstart_root
+    target_path = os.path.join(base_config_dir, "config", "plex_test_libraries")
+    resolved_path = os.path.abspath(target_path)
+
+    # Ensure CLONE_PROGRESS dict exists
+    try:
+        _ = CLONE_PROGRESS
+    except NameError:
+        # Create if missing (keeps function drop-in friendly)
+        globals()["CLONE_PROGRESS"] = {}
+    job_id = str(uuid.uuid4())
+    CLONE_PROGRESS[job_id] = {"phase": "queued", "pct": 0, "text": "Queued..."}
+
+    def worker():
+        zip_url = "https://github.com/chazlarson/plex-test-libraries/archive/refs/heads/main.zip"
+        commit_sha = ""
+
+        try:
+            # Best-effort SHA for UI banner
+            try:
+                commit_info = requests.get(
+                    "https://api.github.com/repos/chazlarson/plex-test-libraries/commits/main",
+                    timeout=5,
+                ).json()
+                commit_sha = commit_info.get("sha", "")[:7]
+            except Exception:
+                commit_sha = ""
+
+            # Try to get total size first (lets UI show determination early)
+            total_size = 0
+            try:
+                head = requests.head(zip_url, allow_redirects=True, timeout=10)
+                total_size = int(head.headers.get("Content-Length", "0") or 0)
+            except Exception:
+                total_size = 0
+
+            CLONE_PROGRESS[job_id] = {
+                "phase": "download",
+                "pct": None,  # None => indeterminate until we know size
+                "text": "Downloading zip…",
+                "downloaded": 0,
+                "total": total_size,
+            }
+
+            with tempfile.TemporaryDirectory() as tmpdir:
+                zip_path = os.path.join(tmpdir, "main.zip")
+
+                # Stream download with throttled progress updates
+                downloaded = 0
+                last_push = 0.0
+                with requests.get(zip_url, stream=True, timeout=30) as r:
+                    r.raise_for_status()
+
+                    # If HEAD failed, try to get size from GET
+                    if not total_size:
+                        try:
+                            total_size = int(r.headers.get("Content-Length", "0") or 0)
+                            CLONE_PROGRESS[job_id]["total"] = total_size
+                        except Exception:
+                            total_size = 0
+
+                    chunk = 1024 * 1024  # 1 MiB
+                    with open(zip_path, "wb") as f:
+                        for part in r.iter_content(chunk_size=chunk):
+                            if not part:
+                                continue
+                            f.write(part)
+                            downloaded += len(part)
+
+                            now = time.time()
+                            if (now - last_push) > 0.5 or (total_size and downloaded >= total_size):
+                                pct = None
+                                if total_size:
+                                    pct = int(downloaded * 100 / total_size)
+                                CLONE_PROGRESS[job_id] = {
+                                    "phase": "download",
+                                    "pct": pct,
+                                    "text": "Downloading zip…",
+                                    "downloaded": downloaded,
+                                    "total": total_size,
+                                }
+                                last_push = now
+
+                # Extract with per-file progress
+                CLONE_PROGRESS[job_id] = {"phase": "extract", "pct": 0, "text": "Extracting…", "files_done": 0, "files_total": 0}
+                with zipfile.ZipFile(zip_path, "r") as zip_ref:
+                    members = zip_ref.infolist()
+                    total_files = len(members) or 1
+                    files_done = 0
+                    last_push = 0.0
+
+                    for info in members:
+                        zip_ref.extract(info, tmpdir)
+                        files_done += 1
+
+                        now = time.time()
+                        if (now - last_push) > 0.2 or files_done == total_files:
+                            pct = int(files_done * 100 / total_files)
+                            CLONE_PROGRESS[job_id] = {
+                                "phase": "extract",
+                                "pct": pct,
+                                "text": f"Extracting… {files_done}/{total_files} files",
+                                "files_done": files_done,
+                                "files_total": total_files,
+                            }
+                            last_push = now
+
+                extracted_dir = os.path.join(tmpdir, "plex-test-libraries-main")
+
+                # Finalize (replace folder)
+                CLONE_PROGRESS[job_id] = {"phase": "finalize", "pct": 95, "text": "Finalizing…"}
+                if os.path.exists(target_path):
+                    shutil.rmtree(target_path, onerror=helpers.handle_remove_readonly)
+                shutil.move(extracted_dir, target_path)
+
+                # Write version marker (best effort)
+                if commit_sha:
+                    try:
+                        with open(os.path.join(target_path, ".test_libraries_version"), "w") as f:
+                            f.write(commit_sha)
+                    except Exception as e:
+                        helpers.ts_log(f"Warning: Failed to write SHA version file: {e}", level="WARNING")
+
+                # Permissions for non-Windows
+                if platform.system() in ["Linux", "Darwin"]:
+                    subprocess.run(["chmod", "-R", "777", target_path], check=False)
+
+                CLONE_PROGRESS[job_id] = {
+                    "phase": "done",
+                    "pct": 100,
+                    "text": "Installed/updated successfully.",
+                    "target_path": resolved_path,
+                }
+
+        except Exception as e:
+            CLONE_PROGRESS[job_id] = {
+                "phase": "error",
+                "pct": 0,
+                "text": f"Error: {str(e)}",
+            }
+
+    threading.Thread(target=worker, daemon=True).start()
+    return jsonify(success=True, job_id=job_id)
+
+
+@app.route("/clone-test-libraries-progress", methods=["GET"])
+def clone_test_libraries_progress():
+    job_id = request.args.get("job_id", "")
+    info = CLONE_PROGRESS.get(job_id)
+    if not info:
+        return jsonify(success=False, message="Unknown job_id"), 404
+
+    # avoid duplicate kwarg: remove job's 'success' if present
+    info_no_flag = dict(info)
+    info_no_flag.pop("success", None)
+
+    return jsonify(success=True, **info_no_flag)
 
 
 @app.route("/clone-test-libraries", methods=["POST"])
@@ -1545,67 +1778,41 @@ def clone_test_libraries():
     try:
         # If already exists
         if os.path.exists(target_path):
-            if os.path.isdir(os.path.join(target_path, ".git")):
-                try:
-                    os.environ["GIT_PYTHON_REFRESH"] = "quiet"
-                    from git import Repo
-
-                    repo = Repo(target_path)
-                    repo.remote().pull()
-                    return jsonify(success=True, message="Test libraries updated successfully.", target_path=resolved_path)
-                except Exception as e:
-                    return jsonify(success=False, message=f"Git pull failed:\n{str(e)}")
-
             if use_config_dir:
-                return jsonify(success=True, message="Test libraries already present and valid (ZIP install).", target_path=resolved_path)
+                return jsonify(success=True, message="Test libraries already present (ZIP install).", target_path=resolved_path)
 
-            return jsonify(success=False, message="The 'plex_test_libraries' folder exists but is not a valid Git repository.\nPlease delete or rename the folder and try again.")
-
-        # Try Git clone
-        git_path = shutil.which("git")
-        if git_path:
-            try:
-                os.environ["GIT_PYTHON_REFRESH"] = "quiet"
-                from git import Repo
-
-                Repo.clone_from("https://github.com/chazlarson/plex-test-libraries.git", target_path)
-            except Exception as e:
-                helpers.ts_log(f"Git clone failed, falling back to ZIP: {e}", level="WARNING")
-                git_path = None  # force fallback below
-
-        # ZIP fallback if git not found or clone failed
-        if not git_path:
-            zip_url = "https://github.com/chazlarson/plex-test-libraries/archive/refs/heads/main.zip"
+        # ZIP fallback if git not found or Download failed
+        zip_url = "https://github.com/chazlarson/plex-test-libraries/archive/refs/heads/main.zip"
+        commit_sha = None
+        try:
+            commit_info = requests.get("https://api.github.com/repos/chazlarson/plex-test-libraries/commits/main", timeout=5).json()
+            commit_sha = commit_info.get("sha", "")[:7]
+        except Exception:
             commit_sha = None
-            try:
-                commit_info = requests.get("https://api.github.com/repos/chazlarson/plex-test-libraries/commits/main", timeout=5).json()
-                commit_sha = commit_info.get("sha", "")[:7]
-            except Exception:
-                commit_sha = None
 
-            with tempfile.TemporaryDirectory() as tmpdir:
-                zip_path = os.path.join(tmpdir, "main.zip")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            zip_path = os.path.join(tmpdir, "main.zip")
 
-                r = requests.get(zip_url)
-                if r.status_code != 200:
-                    return jsonify(success=False, message="Failed to download ZIP fallback from GitHub.")
-                with open(zip_path, "wb") as f:
-                    f.write(r.content)
+            r = requests.get(zip_url)
+            if r.status_code != 200:
+                return jsonify(success=False, message="Failed to download ZIP fallback from GitHub.")
+            with open(zip_path, "wb") as f:
+                f.write(r.content)
 
-                with zipfile.ZipFile(zip_path, "r") as zip_ref:
-                    zip_ref.extractall(tmpdir)
+            with zipfile.ZipFile(zip_path, "r") as zip_ref:
+                zip_ref.extractall(tmpdir)
 
-                extracted_dir = os.path.join(tmpdir, "plex-test-libraries-main")
-                if os.path.exists(target_path):
-                    shutil.rmtree(target_path, onerror=helpers.handle_remove_readonly)
-                shutil.move(extracted_dir, target_path)
+            extracted_dir = os.path.join(tmpdir, "plex-test-libraries-main")
+            if os.path.exists(target_path):
+                shutil.rmtree(target_path, onerror=helpers.handle_remove_readonly)
+            shutil.move(extracted_dir, target_path)
 
-                if commit_sha:
-                    try:
-                        with open(os.path.join(target_path, ".test_libraries_version"), "w") as f:
-                            f.write(commit_sha)
-                    except Exception as e:
-                        helpers.ts_log(f"Warning: Failed to write SHA version file: {e}", level="WARNING")
+            if commit_sha:
+                try:
+                    with open(os.path.join(target_path, ".test_libraries_version"), "w") as f:
+                        f.write(commit_sha)
+                except Exception as e:
+                    helpers.ts_log(f"Warning: Failed to write SHA version file: {e}", level="WARNING")
 
         if use_config_dir and platform.system() in ["Linux", "Darwin"]:
             subprocess.run(["chmod", "-R", "777", target_path], check=False)
