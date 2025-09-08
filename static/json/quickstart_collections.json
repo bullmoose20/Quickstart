@@ -24001,13 +24001,13 @@
             ]
           },
           {
-            "key": "use_max",
-            "label": "Max Movies/Shows",
-            "tooltip": "Collection of Movies/Shows Streaming on Max.",
+            "key": "use_hbomax",
+            "label": "HBO Max Movies/Shows",
+            "tooltip": "Collection of Movies/Shows Streaming on HBO Max.",
             "type": "toggle"
           },
           {
-            "key": "radarr_add_missing_max",
+            "key": "radarr_add_missing_hbomax",
             "label": "Add missing items to Radarr",
             "tooltip": "Add missing items to Radarr can generate a lot of internet traffic and disk space issues depending on the number of items missing in your library. <br> <b>Use with caution.</b> ",
             "tooltip_variant": "danger",
@@ -24017,7 +24017,7 @@
             ]
           },
           {
-            "key": "sonarr_add_missing_max",
+            "key": "sonarr_add_missing_hbomax",
             "label": "Add missing items to Sonarr",
             "tooltip": "Add missing items to Sonarr can generate a lot of internet traffic and disk space issues depending on the number of items missing in your library. <br> <b>Use with caution.</b> ",
             "tooltip_variant": "danger",
