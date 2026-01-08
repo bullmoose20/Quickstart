@@ -40,6 +40,7 @@ const ImageHandler = {
           ImageHandler.generateSinglePreview(libraryId, type)
         } else {
           console.warn(`[DEBUG] Hidden input image not found in dropdown for ${libraryId} - ${type}.`)
+          ImageHandler.updateOverlayBoardBackground(libraryId, type, 'default')
         }
 
         if (callback) callback()
@@ -57,6 +58,7 @@ const ImageHandler = {
     if (!dropdown) return
 
     const selectedImage = dropdown.value || 'default'
+    ImageHandler.updateOverlayBoardBackground(libraryId, type, selectedImage)
 
     const hiddenInput = document.getElementById(`${libraryId}-${type}-hidden`)
     if (hiddenInput) {
@@ -89,6 +91,22 @@ const ImageHandler = {
       .catch(error => console.error(`[ERROR] Generating preview for ${type}:`, error))
   },
 
+  updateOverlayBoardBackground: function (libraryId, type, selectedImage) {
+    const board = document.querySelector(
+      `.overlay-board[data-library-id="${libraryId}"][data-overlay-type="${type}"]`
+    )
+    if (!board) return
+    const canvas = board.querySelector('.overlay-board-canvas')
+    if (!canvas) return
+
+    const baseWidth = Number(board.dataset.baseWidth) || (type === 'episode' ? 1920 : 1000)
+    const baseHeight = Number(board.dataset.baseHeight) || (type === 'episode' ? 1080 : 1500)
+    const normalized = selectedImage && selectedImage !== 'default'
+      ? `/config/uploads/${type}s/${encodeURIComponent(selectedImage)}`
+      : `/static/images/default-${baseWidth}x${baseHeight}.png`
+    canvas.style.backgroundImage = `url("${normalized}")`
+  },
+
   getLibraryOverlays: function (libraryId, isMovie, type = 'movie') {
     const overlays = []
 
@@ -100,21 +118,56 @@ const ImageHandler = {
       const overlayIdMatch = fullName.match(/overlay_([a-zA-Z0-9_]+)/)
       if (!overlayIdMatch) return
 
-      const overlayId = `overlay_${overlayIdMatch[1]}`
+      const overlaySuffix = overlayIdMatch[1]
+      const overlayId = `overlay_${overlaySuffix}`
 
       const overlayObj = {
         id: overlayId,
         template_variables: {}
       }
 
-      // Find any selects like mov-library_movies-movie-overlay_ribbon[style]
-      document.querySelectorAll(`select[name^="${fullName.replace('-overlay_', '-template_overlay_')}["]`).forEach((select) => {
-        const match = select.name.match(/\[([^\]]+)\]/)
-        if (match) {
-          const varName = match[1]
-          overlayObj.template_variables[varName] = select.value
+      const container = input.closest('.template-toggle-group')
+      const templateName = container?.dataset.overlayTemplate
+      const templatePrefix = templateName || fullName.replace('-overlay_', '-template_overlay_')
+
+      // Collect template variables: selects and toggles (e.g., use_edition)
+      const selectors = container
+        ? container.querySelectorAll(
+            `select[name^="${templatePrefix}["], input[type="checkbox"][name^="${templatePrefix}["], input[type="text"][name^="${templatePrefix}["], input[type="number"][name^="${templatePrefix}["], input[type="color"][name^="${templatePrefix}["]`
+        )
+        : document.querySelectorAll(
+            `select[name^="${templatePrefix}["], input[type="checkbox"][name^="${templatePrefix}["], input[type="text"][name^="${templatePrefix}["], input[type="number"][name^="${templatePrefix}["], input[type="color"][name^="${templatePrefix}["]`
+        )
+
+      selectors.forEach((el) => {
+        const match = el.name.match(/\[([^\]]+)\]/)
+        if (!match) return
+        const varName = match[1]
+        // Do not emit text variables for overlays that only need text for preview
+        if (varName === 'text' && (['overlay_video_format', 'overlay_aspect'].includes(overlayId) || ['video_format', 'aspect'].includes(overlaySuffix))) {
+          return
+        }
+        if (el.type === 'checkbox') {
+          overlayObj.template_variables[varName] = el.checked ? (el.value || 'true') : 'false'
+        } else if (el.type === 'number') {
+          const num = Number(el.value)
+          overlayObj.template_variables[varName] = Number.isFinite(num) ? num : el.value
+        } else if (el.type === 'color') {
+          overlayObj.template_variables[varName] = el.value
+        } else {
+          overlayObj.template_variables[varName] = el.value
         }
       })
+
+      // Ensure text is not emitted for overlays that only use it for preview
+      if (['video_format', 'aspect'].includes(overlaySuffix)) {
+        delete overlayObj.template_variables.text
+      } else if (['content_rating_commonsense', 'overlay_content_rating_commonsense'].includes(overlaySuffix)) {
+        delete overlayObj.template_variables.text
+        delete overlayObj.template_variables.font
+        delete overlayObj.template_variables.font_size
+        delete overlayObj.template_variables.font_color
+      }
 
       overlays.push(overlayObj)
     })
@@ -137,6 +190,47 @@ const ImageHandler = {
       if (colorInput) {
         // eslint-disable-next-line camelcase
         template_variables.color = colorInput.value.toString()
+      }
+
+      // Capture offsets for all content ratings (including commonsense)
+      const setNum = (key, el) => {
+        if (!el) return
+        const n = Number(el.value)
+        // eslint-disable-next-line camelcase
+        template_variables[key] = Number.isFinite(n) ? n : el.value
+      }
+      const hInput = document.querySelector(
+        `#${libraryId}-ContentRatingOverlays .overlay-group[data-type="${type}"] input[name="${libraryId}-${type}-template_overlay_${overlaySuffix}[horizontal_offset]"]`
+      )
+      const vInput = document.querySelector(
+        `#${libraryId}-ContentRatingOverlays .overlay-group[data-type="${type}"] input[name="${libraryId}-${type}-template_overlay_${overlaySuffix}[vertical_offset]"]`
+      )
+      setNum('horizontal_offset', hInput)
+      setNum('vertical_offset', vInput)
+
+      // If commonsense, also capture text/post_text/addon_offset and offsets from its template container
+      if (value === 'commonsense') {
+        const container = document.querySelector(
+          `.template-toggle-group[data-overlay-id="overlay_${overlaySuffix}"][data-library-id="${libraryId}"][data-overlay-type="${type}"]`
+        )
+        if (container) {
+          const templateName = container.dataset.overlayTemplate
+          const grab = (key) => {
+            const el = container.querySelector(`[name="${templateName}[${key}]"]`)
+            if (!el) return null
+            if (el.type === 'number') {
+              const n = Number(el.value)
+              return Number.isFinite(n) ? n : el.value
+            }
+            return el.value
+          }
+          const maybeSet = (key) => {
+            const val = grab(key)
+            // eslint-disable-next-line camelcase
+            if (val !== null && val !== undefined) template_variables[key] = val
+          }
+          ;['post_text', 'addon_offset', 'horizontal_offset', 'vertical_offset'].forEach(maybeSet)
+        }
       }
 
       // eslint-disable-next-line camelcase

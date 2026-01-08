@@ -1,4 +1,4 @@
-/* global EventHandler, ValidationHandler, Sortable, showToast, setupParentChildToggleSync, bootstrap */
+/* global EventHandler, ValidationHandler, OverlayHandler, Sortable, showToast, setupParentChildToggleSync, bootstrap */
 
 document.addEventListener('DOMContentLoaded', function () {
   console.log('[DEBUG] Initializing Libraries...')
@@ -161,6 +161,15 @@ document.addEventListener('DOMContentLoaded', function () {
         setupParentChildToggleSync()
       }
       wireOverlayTemplateSections(card)
+      if (typeof OverlayHandler !== 'undefined' && OverlayHandler.initializeOverlayBoards) {
+        OverlayHandler.initializeOverlayBoards(card)
+      }
+      if (typeof OverlayHandler !== 'undefined' && OverlayHandler.initializeOverlayPositioners) {
+        OverlayHandler.initializeOverlayPositioners(card)
+      }
+      if (typeof OverlayHandler !== 'undefined' && OverlayHandler.initializeJumpButtons) {
+        OverlayHandler.initializeJumpButtons(card)
+      }
       if (typeof EventHandler !== 'undefined') {
         EventHandler.attachLibraryListeners()
       }
@@ -173,6 +182,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const payload = {}
       card.querySelectorAll('input, select, textarea').forEach(el => {
         if (!el.name || el.disabled) return
+        if (el.dataset && el.dataset.skipYaml === 'true') return
         if (el.type === 'file') return
 
         if (el.tagName === 'SELECT' && el.multiple) {
@@ -606,19 +616,24 @@ function toggleOverlayTemplateSection (checkbox) {
   const groupContainer = checkbox.closest('.template-toggle-group') // <== FIXED
   const templateSection = groupContainer?.querySelector('.overlay-template-section')
   const detailsToggle = groupContainer?.querySelector('.overlay-details-toggle')
+  const detailActions = groupContainer?.querySelector('.overlay-detail-actions')
 
   if (templateSection) {
     if (checkbox.checked) {
-      templateSection.style.display = 'block'
+      templateSection.style.display = 'none'
+      if (detailActions) {
+        detailActions.classList.remove('d-none')
+      }
       if (detailsToggle) {
-        detailsToggle.classList.remove('d-none')
-        detailsToggle.textContent = 'Hide Details'
+        detailsToggle.textContent = 'Show Details'
       }
     } else {
       templateSection.style.display = 'none'
+      if (detailActions) {
+        detailActions.classList.add('d-none')
+      }
       if (detailsToggle) {
-        detailsToggle.classList.add('d-none')
-        detailsToggle.textContent = 'Details'
+        detailsToggle.textContent = 'Show Details'
       }
     }
   }
@@ -755,6 +770,11 @@ function wireOffsetReset (scope) {
       const hInput = hId ? document.getElementById(hId) : null
       const vInput = vId ? document.getElementById(vId) : null
       const pInput = pId ? document.getElementById(pId) : null
+      const extraIds = (btn.dataset.resetIds || '')
+        .split(',')
+        .map(id => id.trim())
+        .filter(Boolean)
+
       if (hInput && hInput.dataset.default !== undefined) {
         hInput.value = hInput.dataset.default
         hInput.dispatchEvent(new Event('change', { bubbles: true }))
@@ -766,6 +786,40 @@ function wireOffsetReset (scope) {
       if (pInput && pInput.dataset.default !== undefined) {
         pInput.value = pInput.dataset.default
         pInput.dispatchEvent(new Event('change', { bubbles: true }))
+      }
+      extraIds.forEach(id => {
+        const input = document.getElementById(id)
+        if (input && input.dataset.default !== undefined) {
+          const defaultValue = input.dataset.default
+          if (input.type === 'checkbox') {
+            const normalizedDefault = (defaultValue || '').toString().toLowerCase()
+            const normalizedValue = (input.value || '').toString().toLowerCase()
+            input.checked = normalizedDefault === 'true' || normalizedDefault === normalizedValue
+            input.dispatchEvent(new Event('change', { bubbles: true }))
+            return
+          }
+          input.value = defaultValue
+          input.dispatchEvent(new Event('change', { bubbles: true }))
+        }
+      })
+
+      const group = btn.closest('.template-toggle-group')
+      if (group) {
+        group.querySelectorAll('input[data-default], select[data-default], textarea[data-default]').forEach(input => {
+          if (input.disabled) return
+          const defaultValue = input.dataset.default
+          if (defaultValue === undefined) return
+
+          if (input.type === 'checkbox' || input.type === 'radio') {
+            const normalizedDefault = (defaultValue || '').toString().toLowerCase()
+            const normalizedValue = (input.value || '').toString().toLowerCase()
+            input.checked = normalizedDefault === 'true' || normalizedDefault === normalizedValue
+          } else {
+            input.value = defaultValue
+          }
+          input.dispatchEvent(new Event('input', { bubbles: true }))
+          input.dispatchEvent(new Event('change', { bubbles: true }))
+        })
       }
     })
     btn.dataset.listenerAdded = 'true'
@@ -834,7 +888,7 @@ function wireOverlayDetailToggles (scope) {
     btn.addEventListener('click', () => {
       const isHidden = section.style.display === 'none'
       section.style.display = isHidden ? 'block' : 'none'
-      btn.textContent = isHidden ? 'Hide Details' : 'Details'
+      btn.textContent = isHidden ? 'Hide Details' : 'Show Details'
       if (typeof EventHandler !== 'undefined') {
         EventHandler.updateAccordionHighlights()
       }

@@ -1035,7 +1035,7 @@ prefix) %}
 <!-- End of {{ group.accordion }} Collection Accordion -->
 {% endmacro %}
 
-{% macro overlay_group_section(library, data, version_info, group) %}
+{% macro overlay_group_section(library, data, version_info, group, overlay_fonts=[]) %}
 {% set accordion_safe = group.accordion | replace(' ', '') %}
 <!-- {{ group.accordion }} Overlay Accordion -->
 <div class="accordion mt-3" id="{{ library.id }}-{{ accordion_safe }}Accordion">
@@ -1092,6 +1092,10 @@ prefix) %}
                                         {% for overlay in group.overlays %}
                                         {% if overlay.media_types and (type in overlay.media_types) %}
                                         {% set base_id = library.id ~ '-' ~ type ~ '-' ~ overlay.id %}
+                                        {% set template_name = library.id ~ '-' ~ type ~ '-template_' ~ overlay.id %}
+                                        {% set base_width = 1920 if type == 'episode' else 1000 %}
+                                        {% set base_height = 1080 if type == 'episode' else 1500 %}
+                                        {% set overlay_preview_image = overlay.overlay_url or overlay.image_url or '/static/images/default_grey.png' %}
                                         {% set input_name = radio_safe_name if input_type == "radio" else base_id %}
                                         {% set input_value = overlay.value if input_type == "radio" else "true" %}
                                         {% set is_checked = (
@@ -1099,7 +1103,19 @@ prefix) %}
                                         else data.libraries[input_name]|string|lower == "true"
                                         ) %}
 
-                                        <div class="template-toggle-group ms-3 mb-2">
+                                        <div class="template-toggle-group ms-3 mb-2"
+                                            data-overlay-id="{{ overlay.id }}"
+                                            data-overlay-template="{{ template_name }}"
+                                            data-overlay-image="{{ overlay_preview_image }}"
+                                            data-overlay-edition-image="{{ overlay.edition_overlay_url | default('', true) }}"
+                                            data-horizontal-id="{{ template_name }}-horizontal_offset"
+                                            data-vertical-id="{{ template_name }}-vertical_offset"
+                                            data-style-input-id="{{ template_name }}-style"
+                                            data-overlay-type="{{ type }}"
+                                            data-library-id="{{ library.id }}"
+                                            data-base-width="{{ base_width }}"
+                                            data-base-height="{{ base_height }}"
+                                            {% if overlay.default_offsets and overlay.default_offsets.origin %}data-overlay-origin="{{ overlay.default_offsets.origin }}"{% endif %}>
                                             <div class="form-check form-switch">
                                                 <input
                                                     class="form-check-input overlay-toggle template-parent-toggle{% if overlay.readonly %} readonly-toggle{% endif %}"
@@ -1140,7 +1156,6 @@ prefix) %}
                                                 </div>
                                             </div>
 
-                                                {% set template_name = library.id ~ '-' ~ type ~ '-template_' ~ overlay.id %}
                                                 {% if overlay.template_variables %}
                                                 {% set has_builder_level = false %}
                                                 {% if overlay.template_variables is mapping %}
@@ -1156,27 +1171,78 @@ prefix) %}
                                                 <input type="hidden" name="{{ template_name }}[builder_level]" value="{{ type }}">
                                                 {% endif %}
                                                 {% set ns = namespace(has_offsets=false, position_id=None, h_id=None, v_id=None) %}
+                                                {% set extra_reset_ids = [] %}
+                                                {% if overlay.id in ['overlay_runtimes', 'overlay_aspect', 'overlay_video_format'] %}
+                                                    {% set reset_vars = ['text', 'format', 'font', 'font_size', 'font_color'] %}
+                                                    {% for rv in reset_vars %}
+                                                        {% set _ = extra_reset_ids.append(template_name ~ '-' ~ rv) %}
+                                                    {% endfor %}
+                                                {% elif overlay.id == 'overlay_audio_codec' %}
+                                                    {% set _ = extra_reset_ids.append(template_name ~ '-style') %}
+                                                {% elif overlay.id == 'overlay_ribbon' %}
+                                                    {% set _ = extra_reset_ids.append(template_name ~ '-style') %}
+                                                {% elif overlay.id == 'overlay_content_rating_commonsense' %}
+                                                    {% set reset_vars = ['text', 'post_text', 'addon_offset', 'font', 'font_size', 'font_color'] %}
+                                                    {% for rv in reset_vars %}
+                                                        {% set _ = extra_reset_ids.append(template_name ~ '-' ~ rv) %}
+                                                    {% endfor %}
+                                                {% elif overlay.id == 'overlay_resolution' %}
+                                                    {% set _ = extra_reset_ids.append(template_name ~ '-use_edition-true') %}
+                                                {% elif overlay.id.startswith('overlay_content_rating_') %}
+                                                    {% set _ = extra_reset_ids.append(template_name ~ '-color') %}
+                                                {% endif %}
+                                                {% set scan_is_mapping = overlay.template_variables is mapping %}
+                                                {% set scan_items = overlay.template_variables.items() if scan_is_mapping else overlay.template_variables %}
+                                                {% for item in scan_items %}
+                                                {% if scan_is_mapping %}
+                                                {% set var_name = item[0] %}
+                                                {% else %}
+                                                {% set var_details = item %}
+                                                {% set var_name = var_details.key or ('var' ~ loop.index0) %}
+                                                {% endif %}
+                                                {% if var_name in ['horizontal_offset', 'initial_horizontal_offset'] %}{% set ns.has_offsets = true %}{% set ns.h_id = template_name ~ '-' ~ var_name %}{% endif %}
+                                                {% if var_name in ['vertical_offset', 'initial_vertical_offset'] %}{% set ns.has_offsets = true %}{% set ns.v_id = template_name ~ '-' ~ var_name %}{% endif %}
+                                                {% if var_name == 'horizontal_position' %}{% set ns.position_id = template_name ~ '-' ~ var_name %}{% endif %}
+                                                {% endfor %}
                                                 {% set details_id = template_name ~ '-details' %}
-                                                <button class="btn btn-outline-secondary btn-sm ms-3 overlay-details-toggle"
-                                                    type="button" data-section-id="{{ details_id }}"
-                                                    style="display: inline-flex; align-items: center;">
-                                                    Details
-                                                </button>
+                                                <div class="d-flex align-items-center gap-2 flex-wrap mb-2 overlay-detail-actions d-none">
+                                                    <button class="btn btn-outline-secondary btn-sm btn-overlay overlay-details-toggle"
+                                                        type="button" data-section-id="{{ details_id }}"
+                                                        style="display: inline-flex; align-items: center;">
+                                                        Show Details
+                                                    </button>
+                                                    {% if ns.has_offsets or overlay.default_offsets is mapping %}
+                                                    <button type="button"
+                                                        class="btn btn-sm btn-outline-secondary btn-overlay reset-offset-btn"
+                                                        data-horizontal-id="{{ ns.h_id or template_name ~ '-horizontal_offset' }}"
+                                                        data-vertical-id="{{ ns.v_id or template_name ~ '-vertical_offset' }}"
+                                                        {% if ns.position_id %}data-position-id="{{ ns.position_id }}"{% endif %}
+                                                        {% if extra_reset_ids %}data-reset-ids="{{ extra_reset_ids|join(',') }}"{% endif %}>
+                                                        Reset to Defaults
+                                                    </button>
+                                                    {% endif %}
+                                                </div>
                                                 <div class="overlay-template-section mt-2" id="{{ details_id }}"
                                                     style="display: none;">
-                                                    {% set is_mapping = overlay.template_variables is mapping %}
-                                                    {% set tv_items = overlay.template_variables.items() if is_mapping else overlay.template_variables %}
-                                                    {% for item in tv_items %}
-                                                    {% if is_mapping %}
-                                                    {% set var_name = item[0] %}
-                                                    {% set var_details = item[1] %}
-                                                    {% else %}
-                                                    {% set var_details = item %}
-                                                    {% set var_name = var_details.key or ('var' ~ loop.index0) %}
-                                                    {% endif %}
-                                                    {% set skip_var = (var_name == 'builder_level') %}
-                                                    {% set flat_key = template_name ~ '[' ~ var_name ~ ']' %}
-                                                    {% set selected_value = data.libraries.get(flat_key, var_details.default) %}
+                                                {% set is_mapping = overlay.template_variables is mapping %}
+                                                {% set tv_items = overlay.template_variables.items() if is_mapping else overlay.template_variables %}
+                                                {% set seen_vars = [] %}
+                                                {% for item in tv_items %}
+                                                {% if is_mapping %}
+                                                {% set var_name = item[0] %}
+                                                {% set var_details = item[1] %}
+                                                {% else %}
+                                                {% set var_details = item %}
+                                                {% set var_name = var_details.key or ('var' ~ loop.index0) %}
+                                                {% endif %}
+                                                {% if var_name not in seen_vars %}
+                                                {% set _ = seen_vars.append(var_name) %}
+                                                {% set skip_var = (var_name == 'builder_level') %}
+                                                {% set flat_key = template_name ~ '[' ~ var_name ~ ']' %}
+                                                {% set selected_value = data.libraries.get(flat_key, var_details.default) %}
+                                                {% if selected_value is boolean %}
+                                                {% set selected_value = 'true' if selected_value else 'false' %}
+                                                {% endif %}
 
                                                     {% set var_media_types = var_details.media_types if var_details.media_types is defined else [] %}
                                                     {% set skip_var = skip_var or (var_media_types and (type not in var_media_types)) %}
@@ -1245,9 +1311,109 @@ prefix) %}
                                                             id="{{ template_name }}-{{ var_name }}"
                                                             name="{{ template_name }}[{{ var_name }}]"
                                                             aria-describedby="{{ template_name }}-{{ var_name }}_text"
+                                                            {% if var_name == 'font_size' %}min="1"{% endif %}
                                                             value="{{ selected_value }}"
                                                             data-default="{{ var_details.default }}">
                                                     </div>
+                                                    {% elif var_details.input_type == "text" %}
+                                                    {% set display_label = var_details.label or var_name.replace('_', ' ') %}
+                                                    {% set input_id = template_name ~ '-' ~ var_name %}
+                                                    {% set alpha_id = input_id ~ '_alpha' %}
+                                                    {% set raw_color = (selected_value or var_details.default) | string %}
+                                                    {% set r,g,b,a_pct = 255,255,255,100 %}
+                                                    {% if raw_color and raw_color.startswith('#') and raw_color|length == 9 %}
+                                                        {% set r = ('0x' ~ raw_color[1:3])|int(255, base=16) %}
+                                                        {% set g = ('0x' ~ raw_color[3:5])|int(255, base=16) %}
+                                                        {% set b = ('0x' ~ raw_color[5:7])|int(255, base=16) %}
+                                                        {% set a_pct = (('0x' ~ raw_color[7:9])|int(255, base=16) * 100 // 255) %}
+                                                    {% elif raw_color and raw_color.startswith('#') and raw_color|length == 7 %}
+                                                        {% set r = ('0x' ~ raw_color[1:3])|int(255, base=16) %}
+                                                        {% set g = ('0x' ~ raw_color[3:5])|int(255, base=16) %}
+                                                        {% set b = ('0x' ~ raw_color[5:7])|int(255, base=16) %}
+                                                    {% elif raw_color and raw_color[0:4]|lower == 'rgba' and '(' in raw_color and ')' in raw_color %}
+                                                        {% set parts = raw_color[5:-1].split(',') %}
+                                                        {% if parts|length >= 3 %}
+                                                            {% set r = parts[0]|trim|int(255) %}
+                                                            {% set g = parts[1]|trim|int(255) %}
+                                                            {% set b = parts[2]|trim|int(255) %}
+                                                            {% if parts|length >= 4 %}
+                                                                {% set a_val = parts[3]|trim|float(1.0) %}
+                                                                {% set a_pct = (a_val * 100)|int %}
+                                                            {% endif %}
+                                                        {% endif %}
+                                                    {% endif %}
+                                                    {% set color_hex = "#%02X%02X%02X" % (r, g, b) %}
+                                                    {% set color_hex_alpha = "#%02X%02X%02X%02X" % (r, g, b, (a_pct * 255 // 100)) %}
+                                                    {% if var_name in ['font_color', 'back_color', 'back_line_color'] %}
+                                                    <div class="rgba-group mb-2">
+                                                        <div class="rgba-bar-wrap mb-2">
+                                                            <input type="color" class="form-control form-control-color rgba-color-picker visually-hidden"
+                                                                id="{{ input_id }}_picker"
+                                                                aria-label="Pick color"
+                                                                value="{{ color_hex }}"
+                                                                oninput="(function(picker){ const target = document.getElementById('{{ input_id }}'); const alpha = document.getElementById('{{ alpha_id }}'); const alphaInput = document.getElementById('{{ alpha_id }}_pct'); const bar = document.getElementById('{{ input_id }}_bar'); const a = alpha ? (Number(alpha.value)/100) : 1; if (target) { const hex = (picker.value || '#ffffff').toUpperCase(); const r=parseInt(hex.substr(1,2),16); const g=parseInt(hex.substr(3,2),16); const b=parseInt(hex.substr(5,2),16); const aa = Math.round(a * 255); const hexAlpha = aa.toString(16).padStart(2,'0').toUpperCase(); const full = `#${hex.substr(1)}${hexAlpha}`; target.value = full; target.dispatchEvent(new Event('input', { bubbles: true })); target.dispatchEvent(new Event('change', { bubbles: true })); if (bar) bar.style.background = `rgba(${r}, ${g}, ${b}, ${a})`; if (alphaInput) alphaInput.value = Math.round(a * 100); } })(this)">
+                                                            <label id="{{ input_id }}_bar" class="rgba-color-bar" for="{{ input_id }}_picker" aria-label="Pick color"
+                                                                style="background: rgba({{ r }}, {{ g }}, {{ b }}, {{ (a_pct / 100) }});"></label>
+                                                        </div>
+                                                        <div class="form-text rgba-picker-hint mb-2">Click the bar to open the color picker.</div>
+                                                        <div class="input-group mb-2">
+                                                            <span class="input-group-text"
+                                                                id="{{ input_id }}_text"
+                                                                style="width: 170px;">
+                                                                {{ display_label }}
+                                                            </span>
+                                                            <input type="text" class="form-control template-variable-text rgba-hex-input"
+                                                                id="{{ input_id }}"
+                                                                name="{{ template_name }}[{{ var_name }}]"
+                                                                aria-describedby="{{ input_id }}_text"
+                                                                value="{{ color_hex_alpha }}"
+                                                                data-default="{{ var_details.default }}"
+                                                                oninput="(function(field){ const picker = document.getElementById('{{ input_id }}_picker'); const slider = document.getElementById('{{ alpha_id }}'); const alphaInput = document.getElementById('{{ alpha_id }}_pct'); const bar = document.getElementById('{{ input_id }}_bar'); const val = field.value.trim(); if (val.startsWith('#') && (val.length === 9 || val.length === 7)) { const hex = val.length === 9 ? val : (val + 'FF'); const norm = `#${hex.substr(1).toUpperCase()}`; field.value = norm; const r=parseInt(hex.substr(1,2),16); const g=parseInt(hex.substr(3,2),16); const b=parseInt(hex.substr(5,2),16); const a=parseInt(hex.substr(7,2),16); const pct = Math.round((a/255)*100); if (picker) picker.value = `#${hex.substr(1,6)}`.toUpperCase(); if (slider) { slider.value = pct; slider.title = `Opacity: ${pct}%`; } if (alphaInput) alphaInput.value = pct; if (bar) bar.style.background = `rgba(${r}, ${g}, ${b}, ${pct/100})`; } })(this)">
+                                                        </div>
+                                                        <div class="rgba-opacity-row">
+                                                            <span class="input-group-text rgba-opacity-label" style="width: 170px;">Opacity %</span>
+                                                            <input type="number" class="form-control rgba-alpha-input" id="{{ alpha_id }}_pct" min="0" max="100" step="1"
+                                                                value="{{ a_pct }}"
+                                                                oninput="(function(field){ const slider = document.getElementById('{{ alpha_id }}'); const picker = document.getElementById('{{ input_id }}_picker'); const target = document.getElementById('{{ input_id }}'); const bar = document.getElementById('{{ input_id }}_bar'); let val = Number(field.value); if (Number.isNaN(val)) return; if (val < 0) val = 0; if (val > 100) val = 100; field.value = val; if (slider) { slider.value = val; slider.title = `Opacity: ${val}%`; } const hex = picker && picker.value ? picker.value.toUpperCase() : '#FFFFFF'; const a = val / 100; const r=parseInt(hex.substr(1,2),16); const g=parseInt(hex.substr(3,2),16); const b=parseInt(hex.substr(5,2),16); const aa = Math.round(a * 255); const hexAlpha = aa.toString(16).padStart(2,'0').toUpperCase(); const full = `#${hex.substr(1)}${hexAlpha}`; if (target) { target.value = full; target.dispatchEvent(new Event('input', { bubbles: true })); target.dispatchEvent(new Event('change', { bubbles: true })); } if (bar) bar.style.background = `rgba(${r}, ${g}, ${b}, ${a})`; })(this)">
+                                                            <input type="range" class="form-range rgba-alpha-slider" id="{{ alpha_id }}" min="0" max="100" value="{{ a_pct }}"
+                                                                oninput="(function(slider){ const picker = document.getElementById('{{ input_id }}_picker'); const target = document.getElementById('{{ input_id }}'); const alphaInput = document.getElementById('{{ alpha_id }}_pct'); const bar = document.getElementById('{{ input_id }}_bar'); const hex = picker && picker.value ? picker.value.toUpperCase() : '#FFFFFF'; const a = Number(slider.value)/100; const r=parseInt(hex.substr(1,2),16); const g=parseInt(hex.substr(3,2),16); const b=parseInt(hex.substr(5,2),16); const aa = Math.round(a * 255); const hexAlpha = aa.toString(16).padStart(2,'0').toUpperCase(); const full = `#${hex.substr(1)}${hexAlpha}`; if (target) { target.value = full; target.dispatchEvent(new Event('input', { bubbles: true })); target.dispatchEvent(new Event('change', { bubbles: true })); } if (bar) bar.style.background = `rgba(${r}, ${g}, ${b}, ${a})`; if (alphaInput) alphaInput.value = slider.value; slider.title = `Opacity: ${slider.value}%`; })(this)">
+                                                        </div>
+                                                    </div>
+                                                    {% elif var_name == 'font' %}
+                                                    <div class="input-group mb-2">
+                                                        <span class="input-group-text"
+                                                            id="{{ input_id }}_text"
+                                                            style="width: 170px;">
+                                                            {{ display_label }}
+                                                        </span>
+                                                        {% set fonts_list = overlay_fonts if overlay_fonts else ['Inter-Regular.ttf', 'Inter-Medium.ttf', 'Roboto-Regular.ttf'] %}
+                                                        <select class="form-select template-variable-text"
+                                                            id="{{ input_id }}"
+                                                            name="{{ template_name }}[{{ var_name }}]"
+                                                            aria-describedby="{{ input_id }}_text"
+                                                            data-default="{{ var_details.default }}">
+                                                            <option value="" {% if selected_value=='' %}selected{% endif %}>Select font</option>
+                                                            {% for fnt in fonts_list %}
+                                                            <option value="{{ fnt }}" {% if selected_value==fnt %}selected{% endif %}>{{ fnt }}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                        {% else %}
+                                                    <div class="input-group mb-2">
+                                                        <span class="input-group-text"
+                                                            id="{{ input_id }}_text"
+                                                            style="width: 170px;">
+                                                            {{ display_label }}
+                                                        </span>
+                                                        <input type="text" class="form-control template-variable-text"
+                                                            id="{{ input_id }}"
+                                                            name="{{ template_name }}[{{ var_name }}]"
+                                                            aria-describedby="{{ input_id }}_text"
+                                                            value="{{ selected_value }}"
+                                                            data-default="{{ var_details.default }}"
+                                                            {% if var_name == 'text' and overlay.id in ['overlay_aspect', 'overlay_video_format'] %}data-skip-yaml="true"{% endif %}>
+                                                    </div>
+                                                        {% endif %}
                                                     {% elif var_details.type == "toggle" or var_details.input_type == "toggle" %}
                                                     {% set toggle_id = template_name ~ '-' ~ var_name ~ '-' ~ (var_details.value or 'true') %}
                                                     {% set display_label = var_details.label or var_name.replace('_', ' ') %}
@@ -1257,6 +1423,7 @@ prefix) %}
                                                             id="{{ toggle_id }}"
                                                             name="{{ template_name }}[{{ var_name }}]"
                                                             value="{{ var_details.value or 'true' }}"
+                                                            {% if var_details.default is defined %}data-default="{{ var_details.default }}"{% endif %}
                                                             {% if is_checked %}checked{% endif %}>
                                                         <label class="form-check-label ms-2 mb-0" for="{{ toggle_id }}">{{ display_label }}</label>
                                                         {% if var_details.tooltip %}
@@ -1267,64 +1434,45 @@ prefix) %}
                                                     </div>
                                                     {% endif %}
                                                     {% endif %}
+                                                    {% endif %}
                                                     {% endfor %}
 
-                                                    {% if ns.has_offsets %}
-                                                    <div class="mb-2">
-                                                        <button type="button"
-                                                            class="btn btn-sm btn-outline-secondary reset-offset-btn"
-                                                            data-horizontal-id="{{ ns.h_id or template_name ~ '-horizontal_offset' }}"
-                                                            data-vertical-id="{{ ns.v_id or template_name ~ '-vertical_offset' }}"
-                                                            {% if ns.position_id %}data-position-id="{{ ns.position_id }}"{% endif %}>
-                                                            Reset offsets
-                                                        </button>
-                                                    </div>
-                                                    {% endif %}
-
-                                                    {% if not ns.has_offsets and overlay.default_offsets is mapping %}
-                                                    {% set h_default = overlay.default_offsets.get('horizontal', 0) %}
-                                                    {% set v_default = overlay.default_offsets.get('vertical', 0) %}
-                                                    {% set h_flat_key = template_name ~ '[horizontal_offset]' %}
-                                                    {% set v_flat_key = template_name ~ '[vertical_offset]' %}
-                                                    {% set h_value = data.libraries.get(h_flat_key, h_default) %}
-                                                    {% set v_value = data.libraries.get(v_flat_key, v_default) %}
-                                                    <div class="overlay-template-section mt-2">
-                                                        <div class="input-group mb-2">
-                                                            <span class="input-group-text"
-                                                                id="{{ template_name }}-horizontal_offset_text"
-                                                                style="width: 170px;">
+                                                {% if not ns.has_offsets and overlay.default_offsets is mapping %}
+                                                {% set h_default = overlay.default_offsets.get('horizontal', 0) %}
+                                                {% set v_default = overlay.default_offsets.get('vertical', 0) %}
+                                                {% set h_flat_key = template_name ~ '[horizontal_offset]' %}
+                                                {% set v_flat_key = template_name ~ '[vertical_offset]' %}
+                                                {% set h_value = data.libraries.get(h_flat_key, h_default) %}
+                                                {% set v_value = data.libraries.get(v_flat_key, v_default) %}
+                                                <div class="overlay-template-section mt-2">
+                                                    <div class="input-group mb-2">
+                                                        <span class="input-group-text"
+                                                            id="{{ template_name }}-horizontal_offset_text"
+                                                            style="width: 170px;">
                                                                 Horizontal Offset
                                                             </span>
-                                                            <input type="number" class="form-control template-variable-number"
-                                                                id="{{ template_name }}-horizontal_offset"
-                                                                name="{{ template_name }}[horizontal_offset]"
-                                                                aria-describedby="{{ template_name }}-horizontal_offset_text"
-                                                                value="{{ h_value }}"
-                                                                data-default="{{ h_default }}">
-                                                        </div>
-                                                        <div class="input-group mb-2">
-                                                            <span class="input-group-text"
-                                                                id="{{ template_name }}-vertical_offset_text"
-                                                                style="width: 170px;">
+                                                        <input type="number" class="form-control template-variable-number"
+                                                            id="{{ template_name }}-horizontal_offset"
+                                                            name="{{ template_name }}[horizontal_offset]"
+                                                            aria-describedby="{{ template_name }}-horizontal_offset_text"
+                                                            value="{{ h_value }}"
+                                                            data-default="{{ h_default }}">
+                                                    </div>
+                                                    <div class="input-group mb-2">
+                                                        <span class="input-group-text"
+                                                            id="{{ template_name }}-vertical_offset_text"
+                                                            style="width: 170px;">
                                                                 Vertical Offset
                                                             </span>
-                                                            <input type="number" class="form-control template-variable-number"
-                                                                id="{{ template_name }}-vertical_offset"
-                                                                name="{{ template_name }}[vertical_offset]"
-                                                                aria-describedby="{{ template_name }}-vertical_offset_text"
-                                                                value="{{ v_value }}"
-                                                                data-default="{{ v_default }}">
-                                                        </div>
-                                                        <div class="mb-2">
-                                                            <button type="button"
-                                                                class="btn btn-sm btn-outline-secondary reset-offset-btn"
-                                                                data-horizontal-id="{{ template_name }}-horizontal_offset"
-                                                                data-vertical-id="{{ template_name }}-vertical_offset">
-                                                                Reset offsets
-                                                            </button>
-                                                        </div>
+                                                        <input type="number" class="form-control template-variable-number"
+                                                            id="{{ template_name }}-vertical_offset"
+                                                            name="{{ template_name }}[vertical_offset]"
+                                                            aria-describedby="{{ template_name }}-vertical_offset_text"
+                                                            value="{{ v_value }}"
+                                                            data-default="{{ v_default }}">
                                                     </div>
-                                                    {% endif %}
+                                                </div>
+                                                {% endif %}
                                                 </div>
                                                     {% elif overlay.default_offsets is mapping %}
                                                 {% set h_default = overlay.default_offsets.get('horizontal', 0) %}
@@ -1362,10 +1510,11 @@ prefix) %}
                                                     </div>
                                                     <div class="mb-2">
                                                         <button type="button"
-                                                            class="btn btn-sm btn-outline-secondary reset-offset-btn"
+                                                            class="btn btn-sm btn-outline-secondary btn-overlay reset-offset-btn"
                                                             data-horizontal-id="{{ template_name }}-horizontal_offset"
-                                                            data-vertical-id="{{ template_name }}-vertical_offset">
-                                                            Reset offsets
+                                                            data-vertical-id="{{ template_name }}-vertical_offset"
+                                                            {% if extra_reset_ids %}data-reset-ids="{{ extra_reset_ids|join(',') }}"{% endif %}>
+                                                            Reset to Defaults
                                                         </button>
                                                     </div>
                                                 </div>

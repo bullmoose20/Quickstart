@@ -11,9 +11,11 @@
         "label": "Ribbon",
         "url": "https://kometa.wiki/en/nightly/defaults/overlays/ribbon/",
         "image_url": "https://kometa.wiki/en/nightly/assets/images/defaults/overlays/ribbon.png",
+        "overlay_url": "https://raw.githubusercontent.com/Kometa-Team/Kometa/refs/heads/nightly/defaults/overlays/images/ribbon/yellow/oscars.png",
         "default_offsets": {
           "horizontal": 0,
-          "vertical": 0
+          "vertical": 0,
+          "origin": "bottom_right"
         },
         "media_types": [
           "movie",
@@ -57,9 +59,11 @@
         "label": "Mediastinger",
         "url": "https://kometa.wiki/en/nightly/defaults/overlays/mediastinger/",
         "image_url": "https://kometa.wiki/en/nightly/assets/images/defaults/overlays/mediastinger.png",
+        "overlay_url": "https://raw.githubusercontent.com/Kometa-Team/Kometa/refs/heads/nightly/defaults/overlays/images/Mediastinger.png",
         "default_offsets": {
           "horizontal": 200,
-          "vertical": 15
+          "vertical": 15,
+          "origin": "top_right"
         },
         "media_types": [
           "movie"
@@ -74,6 +78,53 @@
             "input_type": "number",
             "default": 15,
             "label": "Vertical Offset"
+          },
+          "back_align": {
+            "default": "center",
+            "label": "Backdrop Alignment",
+            "input_type": "select",
+            "options": [
+              "left",
+              "center",
+              "right",
+              "top",
+              "bottom"
+            ]
+          },
+          "back_color": {
+            "input_type": "text",
+            "default": "#00000099",
+            "label": "Backdrop Color"
+          },
+          "back_height": {
+            "input_type": "number",
+            "default": 105,
+            "label": "Backdrop Height"
+          },
+          "back_width": {
+            "input_type": "number",
+            "default": 105,
+            "label": "Backdrop Width"
+          },
+          "back_line_color": {
+            "input_type": "text",
+            "default": "#00000000",
+            "label": "Backdrop Line Color"
+          },
+          "back_line_width": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Line Width"
+          },
+          "back_padding": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Padding"
+          },
+          "back_radius": {
+            "input_type": "number",
+            "default": 30,
+            "label": "Backdrop Radius"
           }
         }
       },
@@ -84,12 +135,92 @@
         "image_url": "https://kometa.wiki/en/nightly/assets/images/defaults/overlays/episode_info.png",
         "default_offsets": {
           "horizontal": 15,
-          "vertical": 270
+          "vertical": 150,
+          "origin": "bottom_right"
         },
         "media_types": [
           "episode"
         ],
         "template_variables": [
+          {
+            "input_type": "text",
+            "key": "text",
+            "label": "Text",
+            "default": "S03E15"
+          },
+          {
+            "input_type": "text",
+            "key": "font",
+            "label": "Font",
+            "default": "Inter-Medium.ttf"
+          },
+          {
+            "input_type": "number",
+            "key": "font_size",
+            "label": "Font Size",
+            "default": 55
+          },
+          {
+            "input_type": "text",
+            "key": "font_color",
+            "label": "Font Color",
+            "default": "#FFFFFFFF"
+          },
+          {
+            "input_type": "select",
+            "key": "back_align",
+            "label": "Backdrop Alignment",
+            "default": "center",
+            "options": [
+              "left",
+              "center",
+              "right",
+              "top",
+              "bottom"
+            ]
+          },
+          {
+            "input_type": "text",
+            "key": "back_color",
+            "label": "Backdrop Color",
+            "default": "#00000099"
+          },
+          {
+            "input_type": "number",
+            "key": "back_height",
+            "label": "Backdrop Height",
+            "default": 105
+          },
+          {
+            "input_type": "number",
+            "key": "back_width",
+            "label": "Backdrop Width",
+            "default": 305
+          },
+          {
+            "input_type": "text",
+            "key": "back_line_color",
+            "label": "Backdrop Line Color",
+            "default": "#00000000"
+          },
+          {
+            "input_type": "number",
+            "key": "back_line_width",
+            "label": "Backdrop Line Width",
+            "default": 0
+          },
+          {
+            "input_type": "number",
+            "key": "back_padding",
+            "label": "Backdrop Padding",
+            "default": 0
+          },
+          {
+            "input_type": "number",
+            "key": "back_radius",
+            "label": "Backdrop Radius",
+            "default": 30
+          },
           {
             "type": "toggle",
             "key": "builder_level",
@@ -108,12 +239,100 @@
         "image_url": "https://kometa.wiki/en/nightly/assets/images/defaults/overlays/status.png",
         "default_offsets": {
           "horizontal": 15,
-          "vertical": 330
+          "vertical": 330,
+          "origin": "top_left"
         },
         "media_types": [
           "show"
         ],
         "template_variables": {
+          "last": {
+            "input_type": "number",
+            "default": 14,
+            "label": "Last (Days)"
+          },
+          "text_airing": {
+            "input_type": "text",
+            "label": "Airing Text",
+            "default": "AIRING"
+          },
+          "text_returning": {
+            "input_type": "text",
+            "label": "Returning Text",
+            "default": "RETURNING"
+          },
+          "text_canceled": {
+            "input_type": "text",
+            "label": "Canceled Text",
+            "default": "CANCELED"
+          },
+          "text_ended": {
+            "input_type": "text",
+            "label": "Ended Text",
+            "default": "ENDED"
+          },
+          "font": {
+            "input_type": "text",
+            "label": "Font",
+            "default": "Inter-Medium.ttf"
+          },
+          "font_size": {
+            "input_type": "number",
+            "label": "Font Size",
+            "default": 55
+          },
+          "font_color": {
+            "input_type": "text",
+            "label": "Font Color",
+            "default": "#FFFFFFFF"
+          },
+          "back_align": {
+            "default": "center",
+            "label": "Backdrop Alignment",
+            "input_type": "select",
+            "options": [
+              "left",
+              "center",
+              "right",
+              "top",
+              "bottom"
+            ]
+          },
+          "back_color": {
+            "input_type": "text",
+            "default": "#00000099",
+            "label": "Backdrop Color"
+          },
+          "back_height": {
+            "input_type": "number",
+            "default": 105,
+            "label": "Backdrop Height"
+          },
+          "back_width": {
+            "input_type": "number",
+            "default": 305,
+            "label": "Backdrop Width"
+          },
+          "back_line_color": {
+            "input_type": "text",
+            "default": "#00000000",
+            "label": "Backdrop Line Color"
+          },
+          "back_line_width": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Line Width"
+          },
+          "back_padding": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Padding"
+          },
+          "back_radius": {
+            "input_type": "number",
+            "default": 30,
+            "label": "Backdrop Radius"
+          },
           "horizontal_offset": {
             "input_type": "number",
             "default": 15,
@@ -600,10 +819,12 @@
         "label": "US Content Ratings",
         "value": "us_movie",
         "url": "https://kometa.wiki/en/nightly/defaults/overlays/content_rating_us_movie/",
+        "overlay_url": "https://raw.githubusercontent.com/Kometa-Team/Kometa/refs/heads/nightly/defaults/overlays/images/cr/usgc.png",
         "image_url": "https://kometa.wiki/en/nightly/assets/images/defaults/overlays/content_rating_us_movie.png",
         "default_offsets": {
           "horizontal": 15,
-          "vertical": 270
+          "vertical": 270,
+          "origin": "bottom_left"
         },
         "media_types": [
           "movie"
@@ -617,6 +838,53 @@
               "true",
               "false"
             ]
+          },
+          "back_align": {
+            "default": "center",
+            "label": "Backdrop Alignment",
+            "input_type": "select",
+            "options": [
+              "left",
+              "center",
+              "right",
+              "top",
+              "bottom"
+            ]
+          },
+          "back_color": {
+            "input_type": "text",
+            "default": "#00000099",
+            "label": "Backdrop Color"
+          },
+          "back_height": {
+            "input_type": "number",
+            "default": 105,
+            "label": "Backdrop Height"
+          },
+          "back_width": {
+            "input_type": "number",
+            "default": 305,
+            "label": "Backdrop Width"
+          },
+          "back_line_color": {
+            "input_type": "text",
+            "default": "#00000000",
+            "label": "Backdrop Line Color"
+          },
+          "back_line_width": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Line Width"
+          },
+          "back_padding": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Padding"
+          },
+          "back_radius": {
+            "input_type": "number",
+            "default": 30,
+            "label": "Backdrop Radius"
           },
           "horizontal_offset": {
             "input_type": "number",
@@ -635,10 +903,12 @@
         "label": "US Content Ratings",
         "value": "us_show",
         "url": "https://kometa.wiki/en/nightly/defaults/overlays/content_rating_us_show/",
+        "overlay_url": "https://raw.githubusercontent.com/Kometa-Team/Kometa/refs/heads/nightly/defaults/overlays/images/cr/ustv-pgc.png",
         "image_url": "https://kometa.wiki/en/nightly/assets/images/defaults/overlays/content_rating_us_show.png",
         "default_offsets": {
           "horizontal": 15,
-          "vertical": 270
+          "vertical": 270,
+          "origin": "bottom_left"
         },
         "media_types": [
           "show",
@@ -674,6 +944,53 @@
                 "value": "episode"
               }
             ]
+          },
+          "back_align": {
+            "default": "center",
+            "label": "Backdrop Alignment",
+            "input_type": "select",
+            "options": [
+              "left",
+              "center",
+              "right",
+              "top",
+              "bottom"
+            ]
+          },
+          "back_color": {
+            "input_type": "text",
+            "default": "#00000099",
+            "label": "Backdrop Color"
+          },
+          "back_height": {
+            "input_type": "number",
+            "default": 105,
+            "label": "Backdrop Height"
+          },
+          "back_width": {
+            "input_type": "number",
+            "default": 305,
+            "label": "Backdrop Width"
+          },
+          "back_line_color": {
+            "input_type": "text",
+            "default": "#00000000",
+            "label": "Backdrop Line Color"
+          },
+          "back_line_width": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Line Width"
+          },
+          "back_padding": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Padding"
+          },
+          "back_radius": {
+            "input_type": "number",
+            "default": 30,
+            "label": "Backdrop Radius"
           },
           "horizontal_offset": {
             "input_type": "number",
@@ -692,10 +1009,12 @@
         "label": "UK Content Ratings",
         "value": "uk",
         "url": "https://kometa.wiki/en/nightly/defaults/overlays/content_rating_uk/",
+        "overlay_url": "https://raw.githubusercontent.com/Kometa-Team/Kometa/refs/heads/nightly/defaults/overlays/images/cr/uk18c.png",
         "image_url": "https://kometa.wiki/en/nightly/assets/images/defaults/overlays/content_rating_uk.png",
         "default_offsets": {
           "horizontal": 15,
-          "vertical": 270
+          "vertical": 270,
+          "origin": "bottom_left"
         },
         "media_types": [
           "movie",
@@ -732,6 +1051,53 @@
                 "value": "episode"
               }
             ]
+          },
+          "back_align": {
+            "default": "center",
+            "label": "Backdrop Alignment",
+            "input_type": "select",
+            "options": [
+              "left",
+              "center",
+              "right",
+              "top",
+              "bottom"
+            ]
+          },
+          "back_color": {
+            "input_type": "text",
+            "default": "#00000099",
+            "label": "Backdrop Color"
+          },
+          "back_height": {
+            "input_type": "number",
+            "default": 105,
+            "label": "Backdrop Height"
+          },
+          "back_width": {
+            "input_type": "number",
+            "default": 305,
+            "label": "Backdrop Width"
+          },
+          "back_line_color": {
+            "input_type": "text",
+            "default": "#00000000",
+            "label": "Backdrop Line Color"
+          },
+          "back_line_width": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Line Width"
+          },
+          "back_padding": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Padding"
+          },
+          "back_radius": {
+            "input_type": "number",
+            "default": 30,
+            "label": "Backdrop Radius"
           },
           "horizontal_offset": {
             "input_type": "number",
@@ -750,10 +1116,12 @@
         "label": "DE Content Ratings",
         "value": "de",
         "url": "https://kometa.wiki/en/nightly/defaults/overlays/content_rating_de/",
+        "overlay_url": "https://raw.githubusercontent.com/Kometa-Team/Kometa/refs/heads/nightly/defaults/overlays/images/cr/de16c.png",
         "image_url": "https://kometa.wiki/en/nightly/assets/images/defaults/overlays/content_rating_de.png",
         "default_offsets": {
           "horizontal": 15,
-          "vertical": 270
+          "vertical": 270,
+          "origin": "bottom_left"
         },
         "media_types": [
           "movie",
@@ -790,6 +1158,53 @@
                 "value": "episode"
               }
             ]
+          },
+          "back_align": {
+            "default": "center",
+            "label": "Backdrop Alignment",
+            "input_type": "select",
+            "options": [
+              "left",
+              "center",
+              "right",
+              "top",
+              "bottom"
+            ]
+          },
+          "back_color": {
+            "input_type": "text",
+            "default": "#00000099",
+            "label": "Backdrop Color"
+          },
+          "back_height": {
+            "input_type": "number",
+            "default": 105,
+            "label": "Backdrop Height"
+          },
+          "back_width": {
+            "input_type": "number",
+            "default": 305,
+            "label": "Backdrop Width"
+          },
+          "back_line_color": {
+            "input_type": "text",
+            "default": "#00000000",
+            "label": "Backdrop Line Color"
+          },
+          "back_line_width": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Line Width"
+          },
+          "back_padding": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Padding"
+          },
+          "back_radius": {
+            "input_type": "number",
+            "default": 30,
+            "label": "Backdrop Radius"
           },
           "horizontal_offset": {
             "input_type": "number",
@@ -808,10 +1223,12 @@
         "label": "AU Content Ratings",
         "value": "au",
         "url": "https://kometa.wiki/en/nightly/defaults/overlays/content_rating_au/",
+        "overlay_url": "https://raw.githubusercontent.com/Kometa-Team/Kometa/refs/heads/nightly/defaults/overlays/images/cr/au_pgc.png",
         "image_url": "https://kometa.wiki/en/nightly/assets/images/defaults/overlays/content_rating_au.png",
         "default_offsets": {
           "horizontal": 15,
-          "vertical": 270
+          "vertical": 270,
+          "origin": "bottom_left"
         },
         "media_types": [
           "movie",
@@ -848,6 +1265,53 @@
                 "value": "episode"
               }
             ]
+          },
+          "back_align": {
+            "default": "center",
+            "label": "Backdrop Alignment",
+            "input_type": "select",
+            "options": [
+              "left",
+              "center",
+              "right",
+              "top",
+              "bottom"
+            ]
+          },
+          "back_color": {
+            "input_type": "text",
+            "default": "#00000099",
+            "label": "Backdrop Color"
+          },
+          "back_height": {
+            "input_type": "number",
+            "default": 105,
+            "label": "Backdrop Height"
+          },
+          "back_width": {
+            "input_type": "number",
+            "default": 305,
+            "label": "Backdrop Width"
+          },
+          "back_line_color": {
+            "input_type": "text",
+            "default": "#00000000",
+            "label": "Backdrop Line Color"
+          },
+          "back_line_width": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Line Width"
+          },
+          "back_padding": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Padding"
+          },
+          "back_radius": {
+            "input_type": "number",
+            "default": 30,
+            "label": "Backdrop Radius"
           },
           "horizontal_offset": {
             "input_type": "number",
@@ -866,10 +1330,12 @@
         "label": "NZ Content Ratings",
         "value": "nz",
         "url": "https://kometa.wiki/en/nightly/defaults/overlays/content_rating_nz/",
+        "overlay_url": "https://raw.githubusercontent.com/Kometa-Team/Kometa/refs/heads/nightly/defaults/overlays/images/cr/nz_mc.png",
         "image_url": "https://kometa.wiki/en/nightly/assets/images/defaults/overlays/content_rating_nz.png",
         "default_offsets": {
           "horizontal": 15,
-          "vertical": 270
+          "vertical": 270,
+          "origin": "bottom_left"
         },
         "media_types": [
           "movie",
@@ -907,6 +1373,53 @@
               }
             ]
           },
+          "back_align": {
+            "default": "center",
+            "label": "Backdrop Alignment",
+            "input_type": "select",
+            "options": [
+              "left",
+              "center",
+              "right",
+              "top",
+              "bottom"
+            ]
+          },
+          "back_color": {
+            "input_type": "text",
+            "default": "#00000099",
+            "label": "Backdrop Color"
+          },
+          "back_height": {
+            "input_type": "number",
+            "default": 105,
+            "label": "Backdrop Height"
+          },
+          "back_width": {
+            "input_type": "number",
+            "default": 305,
+            "label": "Backdrop Width"
+          },
+          "back_line_color": {
+            "input_type": "text",
+            "default": "#00000000",
+            "label": "Backdrop Line Color"
+          },
+          "back_line_width": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Line Width"
+          },
+          "back_padding": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Padding"
+          },
+          "back_radius": {
+            "input_type": "number",
+            "default": 30,
+            "label": "Backdrop Radius"
+          },
           "horizontal_offset": {
             "input_type": "number",
             "default": 15,
@@ -924,10 +1437,12 @@
         "label": "Common Sense Age Rating",
         "value": "commonsense",
         "url": "https://kometa.wiki/en/nightly/defaults/overlays/commonsense/",
+        "overlay_url": "https://raw.githubusercontent.com/Kometa-Team/Kometa/refs/heads/nightly/defaults/overlays/images/Commonsense.png",
         "image_url": "https://kometa.wiki/en/nightly/assets/images/defaults/overlays/commonsense.png",
         "default_offsets": {
           "horizontal": 15,
-          "vertical": 270
+          "vertical": 270,
+          "origin": "bottom_left"
         },
         "media_types": [
           "movie",
@@ -936,6 +1451,94 @@
           "episode"
         ],
         "template_variables": [
+          {
+            "input_type": "number",
+            "key": "text",
+            "label": "Text",
+            "default": 17
+          },
+          {
+            "input_type": "text",
+            "key": "post_text",
+            "label": "Post Text",
+            "default": "+"
+          },
+          {
+            "input_type": "number",
+            "key": "addon_offset",
+            "label": "Addon Offset",
+            "default": 15
+          },
+          {
+            "input_type": "hidden",
+            "key": "font",
+            "default": "Inter-Medium.ttf"
+          },
+          {
+            "input_type": "hidden",
+            "key": "font_size",
+            "default": 55
+          },
+          {
+            "input_type": "hidden",
+            "key": "font_color",
+            "default": "#FFFFFFFF"
+          },
+          {
+            "input_type": "select",
+            "key": "back_align",
+            "label": "Backdrop Alignment",
+            "default": "center",
+            "options": [
+              "left",
+              "center",
+              "right",
+              "top",
+              "bottom"
+            ]
+          },
+          {
+            "input_type": "text",
+            "key": "back_color",
+            "label": "Backdrop Color",
+            "default": "#00000099"
+          },
+          {
+            "input_type": "number",
+            "key": "back_height",
+            "label": "Backdrop Height",
+            "default": 105
+          },
+          {
+            "input_type": "number",
+            "key": "back_width",
+            "label": "Backdrop Width",
+            "default": 305
+          },
+          {
+            "input_type": "text",
+            "key": "back_line_color",
+            "label": "Backdrop Line Color",
+            "default": "#00000000"
+          },
+          {
+            "input_type": "number",
+            "key": "back_line_width",
+            "label": "Backdrop Line Width",
+            "default": 0
+          },
+          {
+            "input_type": "number",
+            "key": "back_padding",
+            "label": "Backdrop Padding",
+            "default": 0
+          },
+          {
+            "input_type": "number",
+            "key": "back_radius",
+            "label": "Backdrop Radius",
+            "default": 30
+          },
           {
             "type": "toggle",
             "key": "builder_level",
@@ -981,7 +1584,8 @@
         "image_url": "https://kometa.wiki/en/nightly/assets/images/defaults/overlays/aspect.png",
         "default_offsets": {
           "horizontal": 0,
-          "vertical": 150
+          "vertical": 150,
+          "origin": "center_bottom"
         },
         "media_types": [
           "movie",
@@ -993,6 +1597,85 @@
         "tooltip_variant": "danger",
         "extra_url": "https://trash-guides.info/",
         "template_variables": [
+          {
+            "input_type": "text",
+            "key": "text",
+            "label": "Text",
+            "default": "1.78"
+          },
+          {
+            "input_type": "text",
+            "key": "font",
+            "label": "Font",
+            "default": "Inter-Medium.ttf"
+          },
+          {
+            "input_type": "number",
+            "key": "font_size",
+            "label": "Font Size",
+            "default": 55
+          },
+          {
+            "input_type": "text",
+            "key": "font_color",
+            "label": "Font Color",
+            "default": "#FFFFFFFF"
+          },
+          {
+            "input_type": "select",
+            "key": "back_align",
+            "label": "Backdrop Alignment",
+            "default": "center",
+            "options": [
+              "left",
+              "center",
+              "right",
+              "top",
+              "bottom"
+            ]
+          },
+          {
+            "input_type": "text",
+            "key": "back_color",
+            "label": "Backdrop Color",
+            "default": "#00000099"
+          },
+          {
+            "input_type": "number",
+            "key": "back_height",
+            "label": "Backdrop Height",
+            "default": 105
+          },
+          {
+            "input_type": "number",
+            "key": "back_width",
+            "label": "Backdrop Width",
+            "default": 305
+          },
+          {
+            "input_type": "text",
+            "key": "back_line_color",
+            "label": "Backdrop Line Color",
+            "default": "#00000000"
+          },
+          {
+            "input_type": "number",
+            "key": "back_line_width",
+            "label": "Backdrop Line Width",
+            "default": 0
+          },
+          {
+            "input_type": "number",
+            "key": "back_padding",
+            "label": "Backdrop Padding",
+            "default": 0
+          },
+          {
+            "input_type": "number",
+            "key": "back_radius",
+            "label": "Backdrop Radius",
+            "default": 30
+          },
           {
             "type": "toggle",
             "key": "builder_level",
@@ -1027,9 +1710,11 @@
         "label": "Audio Codec",
         "url": "https://kometa.wiki/en/nightly/defaults/overlays/audio_codec/",
         "image_url": "https://kometa.wiki/en/nightly/assets/images/defaults/overlays/audio_codec.png",
+        "overlay_url": "https://raw.githubusercontent.com/Kometa-Team/Kometa/refs/heads/nightly/defaults/overlays/images/audio_codec/compact/plus_atmos.png",
         "default_offsets": {
           "horizontal": 0,
-          "vertical": 15
+          "vertical": 15,
+          "origin": "center_top"
         },
         "media_types": [
           "movie",
@@ -1070,6 +1755,53 @@
               }
             ]
           },
+          "back_align": {
+            "input_type": "select",
+            "default": "center",
+            "label": "Backdrop Alignment",
+            "options": [
+              "left",
+              "center",
+              "right",
+              "top",
+              "bottom"
+            ]
+          },
+          "back_color": {
+            "input_type": "text",
+            "default": "#00000099",
+            "label": "Backdrop Color"
+          },
+          "back_height": {
+            "input_type": "number",
+            "default": 105,
+            "label": "Backdrop Height"
+          },
+          "back_width": {
+            "input_type": "number",
+            "default": 305,
+            "label": "Backdrop Width"
+          },
+          "back_line_color": {
+            "input_type": "text",
+            "default": "#00000000",
+            "label": "Backdrop Line Color"
+          },
+          "back_line_width": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Line Width"
+          },
+          "back_padding": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Padding"
+          },
+          "back_radius": {
+            "input_type": "number",
+            "default": 30,
+            "label": "Backdrop Radius"
+          },
           "horizontal_offset": {
             "input_type": "number",
             "default": 0,
@@ -1087,9 +1819,11 @@
         "label": "Audio/Subtitle Language Count",
         "url": "https://kometa.wiki/en/nightly/defaults/overlays/language_count/",
         "image_url": "https://kometa.wiki/en/nightly/assets/images/defaults/overlays/language_count.png",
+        "overlay_url": "https://raw.githubusercontent.com/Kometa-Team/Kometa/refs/heads/nightly/defaults/overlays/images/multi_audio.png",
         "default_offsets": {
           "horizontal": 0,
-          "vertical": 30
+          "vertical": 30,
+          "origin": "center_bottom"
         },
         "media_types": [
           "movie",
@@ -1098,6 +1832,61 @@
           "episode"
         ],
         "template_variables": [
+          {
+            "input_type": "select",
+            "key": "back_align",
+            "label": "Backdrop Alignment",
+            "default": "center",
+            "options": [
+              "left",
+              "center",
+              "right",
+              "top",
+              "bottom"
+            ]
+          },
+          {
+            "input_type": "text",
+            "key": "back_color",
+            "label": "Backdrop Color",
+            "default": "#00000099"
+          },
+          {
+            "input_type": "number",
+            "key": "back_height",
+            "label": "Backdrop Height",
+            "default": 105
+          },
+          {
+            "input_type": "number",
+            "key": "back_width",
+            "label": "Backdrop Width",
+            "default": 188
+          },
+          {
+            "input_type": "text",
+            "key": "back_line_color",
+            "label": "Backdrop Line Color",
+            "default": "#00000000"
+          },
+          {
+            "input_type": "number",
+            "key": "back_line_width",
+            "label": "Backdrop Line Width",
+            "default": 0
+          },
+          {
+            "input_type": "number",
+            "key": "back_padding",
+            "label": "Backdrop Padding",
+            "default": 0
+          },
+          {
+            "input_type": "number",
+            "key": "back_radius",
+            "label": "Backdrop Radius",
+            "default": 30
+          },
           {
             "type": "toggle",
             "key": "builder_level",
@@ -1270,9 +2059,12 @@
         "label": "Resolutions/Editions",
         "url": "https://kometa.wiki/en/nightly/defaults/overlays/resolution/",
         "image_url": "https://kometa.wiki/en/nightly/assets/images/defaults/overlays/resolution.png",
+        "overlay_url": "https://raw.githubusercontent.com/Kometa-Team/Kometa/refs/heads/nightly/defaults/overlays/images/resolution/4kdvhdrplus.png",
+        "edition_overlay_url": "https://raw.githubusercontent.com/Kometa-Team/Kometa/refs/heads/nightly/defaults/overlays/images/edition/enhanced.png",
         "default_offsets": {
           "horizontal": 15,
-          "vertical": 15
+          "vertical": 15,
+          "origin": "top_left"
         },
         "media_types": [
           "movie",
@@ -1284,6 +2076,72 @@
         "tooltip_variant": "danger",
         "extra_url": "https://trash-guides.info/",
         "template_variables": [
+          {
+            "type": "toggle",
+            "key": "use_edition",
+            "label": "Use Edition",
+            "value": "true",
+            "default": true,
+            "options": [
+              "true",
+              "false"
+            ]
+          },
+          {
+            "input_type": "select",
+            "key": "back_align",
+            "label": "Backdrop Alignment",
+            "default": "center",
+            "options": [
+              "left",
+              "center",
+              "right",
+              "top",
+              "bottom"
+            ]
+          },
+          {
+            "input_type": "text",
+            "key": "back_color",
+            "label": "Backdrop Color",
+            "default": "#00000099"
+          },
+          {
+            "input_type": "number",
+            "key": "back_height",
+            "label": "Backdrop Height",
+            "default": 105
+          },
+          {
+            "input_type": "number",
+            "key": "back_width",
+            "label": "Backdrop Width",
+            "default": 305
+          },
+          {
+            "input_type": "text",
+            "key": "back_line_color",
+            "label": "Backdrop Line Color",
+            "default": "#00000000"
+          },
+          {
+            "input_type": "number",
+            "key": "back_line_width",
+            "label": "Backdrop Line Width",
+            "default": 0
+          },
+          {
+            "input_type": "number",
+            "key": "back_padding",
+            "label": "Backdrop Padding",
+            "default": 0
+          },
+          {
+            "input_type": "number",
+            "key": "back_radius",
+            "label": "Backdrop Radius",
+            "default": 30
+          },
           {
             "type": "toggle",
             "key": "builder_level",
@@ -1320,7 +2178,8 @@
         "image_url": "https://kometa.wiki/en/nightly/assets/images/defaults/overlays/runtimes.png",
         "default_offsets": {
           "horizontal": 15,
-          "vertical": 30
+          "vertical": 30,
+          "origin": "bottom_right"
         },
         "media_types": [
           "movie",
@@ -1328,6 +2187,91 @@
           "episode"
         ],
         "template_variables": [
+          {
+            "input_type": "text",
+            "key": "text",
+            "label": "Prefix Text",
+            "default": "Runtime: "
+          },
+          {
+            "input_type": "text",
+            "key": "format",
+            "label": "Format",
+            "default": "<<runtimeH>>h <<runtimeM>>m"
+          },
+          {
+            "input_type": "text",
+            "key": "font",
+            "label": "Font",
+            "default": "Inter-Medium.ttf"
+          },
+          {
+            "input_type": "number",
+            "key": "font_size",
+            "label": "Font Size",
+            "default": 55
+          },
+          {
+            "input_type": "text",
+            "key": "font_color",
+            "label": "Font Color",
+            "default": "#FFFFFFFF"
+          },
+          {
+            "input_type": "select",
+            "key": "back_align",
+            "label": "Backdrop Alignment",
+            "default": "center",
+            "options": [
+              "left",
+              "center",
+              "right",
+              "top",
+              "bottom"
+            ]
+          },
+          {
+            "input_type": "text",
+            "key": "back_color",
+            "label": "Backdrop Color",
+            "default": "#00000099"
+          },
+          {
+            "input_type": "number",
+            "key": "back_height",
+            "label": "Backdrop Height",
+            "default": 105
+          },
+          {
+            "input_type": "number",
+            "key": "back_width",
+            "label": "Backdrop Width",
+            "default": 600
+          },
+          {
+            "input_type": "text",
+            "key": "back_line_color",
+            "label": "Backdrop Line Color",
+            "default": "#00000000"
+          },
+          {
+            "input_type": "number",
+            "key": "back_line_width",
+            "label": "Backdrop Line Width",
+            "default": 0
+          },
+          {
+            "input_type": "number",
+            "key": "back_padding",
+            "label": "Backdrop Padding",
+            "default": 0
+          },
+          {
+            "input_type": "number",
+            "key": "back_radius",
+            "label": "Backdrop Radius",
+            "default": 30
+          },
           {
             "type": "toggle",
             "key": "builder_level",
@@ -1353,9 +2297,11 @@
         "label": "Versions",
         "url": "https://kometa.wiki/en/nightly/defaults/overlays/versions/",
         "image_url": "https://kometa.wiki/en/nightly/assets/images/defaults/overlays/versions.png",
+        "overlay_url": "https://raw.githubusercontent.com/Kometa-Team/Kometa/refs/heads/nightly/defaults/overlays/images/versions.png",
         "default_offsets": {
           "horizontal": 15,
-          "vertical": 335
+          "vertical": 335,
+          "origin": "bottom_right"
         },
         "media_types": [
           "movie",
@@ -1364,6 +2310,61 @@
           "episode"
         ],
         "template_variables": [
+          {
+            "input_type": "select",
+            "key": "back_align",
+            "label": "Backdrop Alignment",
+            "default": "center",
+            "options": [
+              "left",
+              "center",
+              "right",
+              "top",
+              "bottom"
+            ]
+          },
+          {
+            "input_type": "text",
+            "key": "back_color",
+            "label": "Backdrop Color",
+            "default": "#00000099"
+          },
+          {
+            "input_type": "number",
+            "key": "back_height",
+            "label": "Backdrop Height",
+            "default": 105
+          },
+          {
+            "input_type": "number",
+            "key": "back_width",
+            "label": "Backdrop Width",
+            "default": 105
+          },
+          {
+            "input_type": "text",
+            "key": "back_line_color",
+            "label": "Backdrop Line Color",
+            "default": "#00000000"
+          },
+          {
+            "input_type": "number",
+            "key": "back_line_width",
+            "label": "Backdrop Line Width",
+            "default": 0
+          },
+          {
+            "input_type": "number",
+            "key": "back_padding",
+            "label": "Backdrop Padding",
+            "default": 0
+          },
+          {
+            "input_type": "number",
+            "key": "back_radius",
+            "label": "Backdrop Radius",
+            "default": 30
+          },
           {
             "type": "toggle",
             "key": "builder_level",
@@ -1400,7 +2401,8 @@
         "image_url": "https://kometa.wiki/en/nightly/assets/images/defaults/overlays/video_format.png",
         "default_offsets": {
           "horizontal": 15,
-          "vertical": 30
+          "vertical": 30,
+          "origin": "bottom_left"
         },
         "media_types": [
           "movie",
@@ -1412,6 +2414,85 @@
         "tooltip_variant": "danger",
         "extra_url": "https://trash-guides.info/",
         "template_variables": [
+          {
+            "input_type": "text",
+            "key": "text",
+            "label": "Text",
+            "default": "HDTV"
+          },
+          {
+            "input_type": "text",
+            "key": "font",
+            "label": "Font",
+            "default": "Inter-Medium.ttf"
+          },
+          {
+            "input_type": "number",
+            "key": "font_size",
+            "label": "Font Size",
+            "default": 55
+          },
+          {
+            "input_type": "text",
+            "key": "font_color",
+            "label": "Font Color",
+            "default": "#FFFFFFFF"
+          },
+          {
+            "input_type": "select",
+            "key": "back_align",
+            "label": "Backdrop Alignment",
+            "default": "center",
+            "options": [
+              "left",
+              "center",
+              "right",
+              "top",
+              "bottom"
+            ]
+          },
+          {
+            "input_type": "text",
+            "key": "back_color",
+            "label": "Backdrop Color",
+            "default": "#00000099"
+          },
+          {
+            "input_type": "number",
+            "key": "back_height",
+            "label": "Backdrop Height",
+            "default": 105
+          },
+          {
+            "input_type": "number",
+            "key": "back_width",
+            "label": "Backdrop Width",
+            "default": 305
+          },
+          {
+            "input_type": "text",
+            "key": "back_line_color",
+            "label": "Backdrop Line Color",
+            "default": "#00000000"
+          },
+          {
+            "input_type": "number",
+            "key": "back_line_width",
+            "label": "Backdrop Line Width",
+            "default": 0
+          },
+          {
+            "input_type": "number",
+            "key": "back_padding",
+            "label": "Backdrop Padding",
+            "default": 0
+          },
+          {
+            "input_type": "number",
+            "key": "back_radius",
+            "label": "Backdrop Radius",
+            "default": 30
+          },
           {
             "type": "toggle",
             "key": "builder_level",
@@ -1455,9 +2536,11 @@
         "label": "Streaming",
         "url": "https://kometa.wiki/en/nightly/defaults/overlays/streaming/",
         "image_url": "https://kometa.wiki/en/nightly/assets/images/defaults/overlays/streaming.png",
+        "overlay_url": "https://raw.githubusercontent.com/Kometa-Team/Kometa/refs/heads/nightly/defaults/overlays/images/streaming/color/Crave.png",
         "default_offsets": {
           "horizontal": 15,
-          "vertical": 390
+          "vertical": 390,
+          "origin": "bottom_left"
         },
         "media_types": [
           "movie",
@@ -1495,6 +2578,53 @@
               }
             ]
           },
+          "back_align": {
+            "input_type": "select",
+            "default": "center",
+            "label": "Backdrop Alignment",
+            "options": [
+              "left",
+              "center",
+              "right",
+              "top",
+              "bottom"
+            ]
+          },
+          "back_color": {
+            "input_type": "text",
+            "default": "#00000099",
+            "label": "Backdrop Color"
+          },
+          "back_height": {
+            "input_type": "number",
+            "default": 105,
+            "label": "Backdrop Height"
+          },
+          "back_width": {
+            "input_type": "number",
+            "default": 305,
+            "label": "Backdrop Width"
+          },
+          "back_line_color": {
+            "input_type": "text",
+            "default": "#00000000",
+            "label": "Backdrop Line Color"
+          },
+          "back_line_width": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Line Width"
+          },
+          "back_padding": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Padding"
+          },
+          "back_radius": {
+            "input_type": "number",
+            "default": 30,
+            "label": "Backdrop Radius"
+          },
           "horizontal_offset": {
             "input_type": "number",
             "default": 15,
@@ -1512,9 +2642,11 @@
         "label": "Studio",
         "url": "https://kometa.wiki/en/nightly/defaults/overlays/studio/",
         "image_url": "https://kometa.wiki/en/nightly/assets/images/defaults/overlays/studio.png",
+        "overlay_url": "https://raw.githubusercontent.com/Kometa-Team/Kometa/refs/heads/nightly/defaults/overlays/images/studio/standard/8bit.png",
         "default_offsets": {
           "horizontal": 15,
-          "vertical": 150
+          "vertical": 150,
+          "origin": "bottom_left"
         },
         "media_types": [
           "movie",
@@ -1552,6 +2684,53 @@
               }
             ]
           },
+          "back_align": {
+            "input_type": "select",
+            "default": "center",
+            "label": "Backdrop Alignment",
+            "options": [
+              "left",
+              "center",
+              "right",
+              "top",
+              "bottom"
+            ]
+          },
+          "back_color": {
+            "input_type": "text",
+            "default": "#00000099",
+            "label": "Backdrop Color"
+          },
+          "back_height": {
+            "input_type": "number",
+            "default": 105,
+            "label": "Backdrop Height"
+          },
+          "back_width": {
+            "input_type": "number",
+            "default": 305,
+            "label": "Backdrop Width"
+          },
+          "back_line_color": {
+            "input_type": "text",
+            "default": "#00000000",
+            "label": "Backdrop Line Color"
+          },
+          "back_line_width": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Line Width"
+          },
+          "back_padding": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Padding"
+          },
+          "back_radius": {
+            "input_type": "number",
+            "default": 30,
+            "label": "Backdrop Radius"
+          },
           "horizontal_offset": {
             "input_type": "number",
             "default": 15,
@@ -1569,9 +2748,11 @@
         "label": "Network",
         "url": "https://kometa.wiki/en/nightly/defaults/overlays/network/",
         "image_url": "https://kometa.wiki/en/nightly/assets/images/defaults/overlays/network.png",
+        "overlay_url": "https://raw.githubusercontent.com/Kometa-Team/Kometa/refs/heads/nightly/defaults/overlays/images/network/color/BBC%20One.png",
         "default_offsets": {
           "horizontal": 15,
-          "vertical": 510
+          "vertical": 510,
+          "origin": "bottom_left"
         },
         "media_types": [
           "show",
@@ -1608,6 +2789,53 @@
               }
             ]
           },
+          "back_align": {
+            "input_type": "select",
+            "default": "center",
+            "label": "Backdrop Alignment",
+            "options": [
+              "left",
+              "center",
+              "right",
+              "top",
+              "bottom"
+            ]
+          },
+          "back_color": {
+            "input_type": "text",
+            "default": "#00000099",
+            "label": "Backdrop Color"
+          },
+          "back_height": {
+            "input_type": "number",
+            "default": 105,
+            "label": "Backdrop Height"
+          },
+          "back_width": {
+            "input_type": "number",
+            "default": 305,
+            "label": "Backdrop Width"
+          },
+          "back_line_color": {
+            "input_type": "text",
+            "default": "#00000000",
+            "label": "Backdrop Line Color"
+          },
+          "back_line_width": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Line Width"
+          },
+          "back_padding": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Padding"
+          },
+          "back_radius": {
+            "input_type": "number",
+            "default": 30,
+            "label": "Backdrop Radius"
+          },
           "horizontal_offset": {
             "input_type": "number",
             "default": 15,
@@ -1634,9 +2862,11 @@
         "label": "Direct Play Only",
         "url": "https://kometa.wiki/en/nightly/defaults/overlays/direct_play/",
         "image_url": "https://kometa.wiki/en/nightly/assets/images/defaults/overlays/direct_play.png",
+        "overlay_url": "https://raw.githubusercontent.com/Kometa-Team/Kometa/refs/heads/nightly/defaults/overlays/images/Direct-Play.png",
         "default_offsets": {
           "horizontal": 0,
-          "vertical": 150
+          "vertical": 150,
+          "origin": "center_bottom"
         },
         "media_types": [
           "movie",
@@ -1645,6 +2875,61 @@
           "episode"
         ],
         "template_variables": [
+          {
+            "input_type": "select",
+            "key": "back_align",
+            "label": "Backdrop Alignment",
+            "default": "center",
+            "options": [
+              "left",
+              "center",
+              "right",
+              "top",
+              "bottom"
+            ]
+          },
+          {
+            "input_type": "text",
+            "key": "back_color",
+            "label": "Backdrop Color",
+            "default": "#00000099"
+          },
+          {
+            "input_type": "number",
+            "key": "back_height",
+            "label": "Backdrop Height",
+            "default": 170
+          },
+          {
+            "input_type": "number",
+            "key": "back_width",
+            "label": "Backdrop Width",
+            "default": 305
+          },
+          {
+            "input_type": "text",
+            "key": "back_line_color",
+            "label": "Backdrop Line Color",
+            "default": "#00000000"
+          },
+          {
+            "input_type": "number",
+            "key": "back_line_width",
+            "label": "Backdrop Line Width",
+            "default": 0
+          },
+          {
+            "input_type": "number",
+            "key": "back_padding",
+            "label": "Backdrop Padding",
+            "default": 0
+          },
+          {
+            "input_type": "number",
+            "key": "back_radius",
+            "label": "Backdrop Radius",
+            "default": 30
+          },
           {
             "type": "toggle",
             "key": "builder_level",
