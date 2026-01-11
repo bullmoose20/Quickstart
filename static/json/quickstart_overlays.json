@@ -2017,9 +2017,11 @@
         "label": "Audio Language Flags",
         "url": "https://kometa.wiki/en/nightly/defaults/overlays/languages/",
         "image_url": "https://kometa.wiki/en/nightly/assets/images/defaults/overlays/languages.png",
+        "overlay_url": "https://raw.githubusercontent.com/Kometa-Team/Kometa/refs/heads/nightly/defaults/overlays/images/flag/round/us.png",
         "default_offsets": {
           "horizontal": 15,
-          "vertical": 223
+          "vertical": 223,
+          "origin": "top_left"
         },
         "media_types": [
           "movie",
@@ -2046,6 +2048,45 @@
               "square",
               "half"
             ]
+          },
+          "font": {
+            "label": "Font",
+            "input_type": "text",
+            "default": "Inter-Bold.ttf"
+          },
+          "font_size": {
+            "label": "Font Size",
+            "input_type": "number",
+            "default": 50
+          },
+          "font_color": {
+            "label": "Font Color",
+            "input_type": "text",
+            "default": "#FFFFFFFF"
+          },
+          "hide_text": {
+            "label": "Hide Text",
+            "input_type": "toggle",
+            "default": false
+          },
+          "use_lowercase": {
+            "label": "Use Lowercase",
+            "input_type": "toggle",
+            "default": false
+          },
+          "group_alignment": {
+            "label": "Group Alignment",
+            "input_type": "select",
+            "default": "vertical",
+            "options": [
+              "vertical",
+              "horizontal"
+            ]
+          },
+          "offset": {
+            "label": "Addon Offset",
+            "input_type": "number",
+            "default": 10
           },
           "builder_level": {
             "input_type": "toggle",
@@ -2067,6 +2108,51 @@
               }
             ]
           },
+          "back_color": {
+            "input_type": "text",
+            "default": "#00000099",
+            "label": "Backdrop Color"
+          },
+          "back_height": {
+            "input_type": "number",
+            "default": 60,
+            "label": "Backdrop Height"
+          },
+          "back_width": {
+            "input_type": "number",
+            "default": 190,
+            "label": "Backdrop Width"
+          },
+          "back_line_color": {
+            "input_type": "text",
+            "default": "#00000000",
+            "label": "Backdrop Line Color"
+          },
+          "back_line_width": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Line Width"
+          },
+          "back_padding": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Padding"
+          },
+          "back_radius": {
+            "input_type": "number",
+            "default": 26,
+            "label": "Backdrop Radius"
+          },
+          "horizontal_offset": {
+            "input_type": "number",
+            "default": 15,
+            "label": "Horizontal Offset"
+          },
+          "vertical_offset": {
+            "input_type": "number",
+            "default": 223,
+            "label": "Vertical Offset"
+          },
           "initial_horizontal_offset": {
             "input_type": "number",
             "default": 15,
@@ -2084,9 +2170,11 @@
         "label": "Subtitle Language Flags",
         "url": "https://kometa.wiki/en/nightly/defaults/overlays/languages/",
         "image_url": "https://kometa.wiki/en/nightly/assets/images/defaults/overlays/languages.png",
+        "overlay_url": "https://raw.githubusercontent.com/Kometa-Team/Kometa/refs/heads/nightly/defaults/overlays/images/flag/round/us.png",
         "default_offsets": {
           "horizontal": 15,
-          "vertical": 223
+          "vertical": 223,
+          "origin": "top_right"
         },
         "media_types": [
           "movie",
@@ -2113,6 +2201,45 @@
               "square",
               "half"
             ]
+          },
+          "font": {
+            "label": "Font",
+            "input_type": "text",
+            "default": "Inter-Bold.ttf"
+          },
+          "font_size": {
+            "label": "Font Size",
+            "input_type": "number",
+            "default": 50
+          },
+          "font_color": {
+            "label": "Font Color",
+            "input_type": "text",
+            "default": "#FFFFFFFF"
+          },
+          "hide_text": {
+            "label": "Hide Text",
+            "input_type": "toggle",
+            "default": false
+          },
+          "use_lowercase": {
+            "label": "Use Lowercase",
+            "input_type": "toggle",
+            "default": false
+          },
+          "group_alignment": {
+            "label": "Group Alignment",
+            "input_type": "select",
+            "default": "vertical",
+            "options": [
+              "vertical",
+              "horizontal"
+            ]
+          },
+          "offset": {
+            "label": "Addon Offset",
+            "input_type": "number",
+            "default": 10
           },
           "use_subtitles": {
             "input_type": "hidden",
@@ -2137,6 +2264,51 @@
                 "value": "episode"
               }
             ]
+          },
+          "back_color": {
+            "input_type": "text",
+            "default": "#00000099",
+            "label": "Backdrop Color"
+          },
+          "back_height": {
+            "input_type": "number",
+            "default": 60,
+            "label": "Backdrop Height"
+          },
+          "back_width": {
+            "input_type": "number",
+            "default": 190,
+            "label": "Backdrop Width"
+          },
+          "back_line_color": {
+            "input_type": "text",
+            "default": "#00000000",
+            "label": "Backdrop Line Color"
+          },
+          "back_line_width": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Line Width"
+          },
+          "back_padding": {
+            "input_type": "number",
+            "default": 0,
+            "label": "Backdrop Padding"
+          },
+          "back_radius": {
+            "input_type": "number",
+            "default": 26,
+            "label": "Backdrop Radius"
+          },
+          "horizontal_offset": {
+            "input_type": "number",
+            "default": 15,
+            "label": "Horizontal Offset"
+          },
+          "vertical_offset": {
+            "input_type": "number",
+            "default": 223,
+            "label": "Vertical Offset"
           },
           "initial_horizontal_offset": {
             "input_type": "number",

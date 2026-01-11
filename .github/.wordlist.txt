@@ -28,3 +28,7 @@ walkthroughs
 xxxx
 yozora
 yozoraxcii
+AppIndicator
+KStatusNotifierItem
+PyQt
+Wayland
