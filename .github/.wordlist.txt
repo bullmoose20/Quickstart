@@ -32,3 +32,7 @@ AppIndicator
 KStatusNotifierItem
 PyQt
 Wayland
+Personalization
+Emby
+Jellyfin
+Seerr
