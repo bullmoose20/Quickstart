@@ -167,6 +167,62 @@
             "default": "#FFFFFFFF"
           },
           {
+            "input_type": "number",
+            "key": "stroke_width",
+            "label": "Stroke Width",
+            "default": 1,
+            "tooltip": "Font Stroke Width for the Overlay. Use any number greater than 0."
+          },
+          {
+            "input_type": "text",
+            "key": "stroke_color",
+            "label": "Stroke Color",
+            "default": "#00000000",
+            "tooltip": "Font Stroke Color for the Overlay. Hex format: #RRGGBBAA."
+          },
+          {
+            "input_type": "number",
+            "key": "stroke_width",
+            "label": "Stroke Width",
+            "default": 1,
+            "tooltip": "Font Stroke Width for the Overlay. Use any number greater than 0."
+          },
+          {
+            "input_type": "text",
+            "key": "stroke_color",
+            "label": "Stroke Color",
+            "default": "#00000000",
+            "tooltip": "Font Stroke Color for the Overlay. Hex format: #RRGGBBAA."
+          },
+          {
+            "input_type": "number",
+            "key": "stroke_width",
+            "label": "Stroke Width",
+            "default": 1,
+            "tooltip": "Font Stroke Width for the Overlay. Use any number greater than 0."
+          },
+          {
+            "input_type": "text",
+            "key": "stroke_color",
+            "label": "Stroke Color",
+            "default": "#00000000",
+            "tooltip": "Font Stroke Color for the Overlay. Hex format: #RRGGBBAA."
+          },
+          {
+            "input_type": "number",
+            "key": "stroke_width",
+            "label": "Stroke Width",
+            "default": 1,
+            "tooltip": "Font Stroke Width for the Overlay. Use any number greater than 0."
+          },
+          {
+            "input_type": "text",
+            "key": "stroke_color",
+            "label": "Stroke Color",
+            "default": "#00000000",
+            "tooltip": "Font Stroke Color for the Overlay. Hex format: #RRGGBBAA."
+          },
+          {
             "input_type": "select",
             "key": "back_align",
             "label": "Backdrop Alignment",
@@ -286,6 +342,18 @@
             "label": "Font Color",
             "default": "#FFFFFFFF"
           },
+          "stroke_width": {
+            "input_type": "number",
+            "label": "Stroke Width",
+            "default": 1,
+            "tooltip": "Font Stroke Width for the Overlay. Use any number greater than 0."
+          },
+          "stroke_color": {
+            "input_type": "text",
+            "label": "Stroke Color",
+            "default": "#00000000",
+            "tooltip": "Font Stroke Color for the Overlay. Hex format: #RRGGBBAA."
+          },
           "back_align": {
             "default": "center",
             "label": "Backdrop Alignment",
@@ -353,7 +421,7 @@
         "default_offsets": {
           "horizontal": 15,
           "vertical": 0,
-          "origin": "center_right"
+          "origin": "center_left"
         },
         "media_types": [
           "movie",
@@ -436,6 +504,33 @@
               }
             ]
           },
+          "rating1_font": {
+            "input_type": "text",
+            "label": "Rating 1 Font",
+            "default": "Inter-Medium.ttf"
+          },
+          "rating1_font_size": {
+            "input_type": "number",
+            "label": "Rating 1 Font Size",
+            "default": 55
+          },
+          "rating1_font_color": {
+            "input_type": "text",
+            "label": "Rating 1 Font Color",
+            "default": "#FFFFFFFF"
+          },
+          "rating1_stroke_width": {
+            "input_type": "number",
+            "label": "Rating 1 Stroke Width",
+            "default": 1,
+            "tooltip": "Font Stroke Width for the Overlay. Use any number greater than 0."
+          },
+          "rating1_stroke_color": {
+            "input_type": "text",
+            "label": "Rating 1 Stroke Color",
+            "default": "#00000000",
+            "tooltip": "Font Stroke Color for the Overlay. Hex format: #RRGGBBAA."
+          },
           "rating2": {
             "input_type": "select",
             "default": "critic",
@@ -511,6 +606,33 @@
                 "label": "Star"
               }
             ]
+          },
+          "rating2_font": {
+            "input_type": "text",
+            "label": "Rating 2 Font",
+            "default": "Inter-Medium.ttf"
+          },
+          "rating2_font_size": {
+            "input_type": "number",
+            "label": "Rating 2 Font Size",
+            "default": 55
+          },
+          "rating2_font_color": {
+            "input_type": "text",
+            "label": "Rating 2 Font Color",
+            "default": "#FFFFFFFF"
+          },
+          "rating2_stroke_width": {
+            "input_type": "number",
+            "label": "Rating 2 Stroke Width",
+            "default": 1,
+            "tooltip": "Font Stroke Width for the Overlay. Use any number greater than 0."
+          },
+          "rating2_stroke_color": {
+            "input_type": "text",
+            "label": "Rating 2 Stroke Color",
+            "default": "#00000000",
+            "tooltip": "Font Stroke Color for the Overlay. Hex format: #RRGGBBAA."
           },
           "rating3": {
             "input_type": "select",
@@ -588,6 +710,33 @@
               }
             ]
           },
+          "rating3_font": {
+            "input_type": "text",
+            "label": "Rating 3 Font",
+            "default": "Inter-Medium.ttf"
+          },
+          "rating3_font_size": {
+            "input_type": "number",
+            "label": "Rating 3 Font Size",
+            "default": 55
+          },
+          "rating3_font_color": {
+            "input_type": "text",
+            "label": "Rating 3 Font Color",
+            "default": "#FFFFFFFF"
+          },
+          "rating3_stroke_width": {
+            "input_type": "number",
+            "label": "Rating 3 Stroke Width",
+            "default": 1,
+            "tooltip": "Font Stroke Width for the Overlay. Use any number greater than 0."
+          },
+          "rating3_stroke_color": {
+            "input_type": "text",
+            "label": "Rating 3 Stroke Color",
+            "default": "#00000000",
+            "tooltip": "Font Stroke Color for the Overlay. Hex format: #RRGGBBAA."
+          },
           "back_align": {
             "input_type": "select",
             "default": "center",
@@ -637,7 +786,7 @@
           },
           "horizontal_position": {
             "input_type": "select",
-            "default": "right",
+            "default": "left",
             "options": [
               "left",
               "center",
@@ -747,6 +896,33 @@
               }
             ]
           },
+          "rating1_font": {
+            "input_type": "text",
+            "label": "Rating 1 Font",
+            "default": "Inter-Medium.ttf"
+          },
+          "rating1_font_size": {
+            "input_type": "number",
+            "label": "Rating 1 Font Size",
+            "default": 55
+          },
+          "rating1_font_color": {
+            "input_type": "text",
+            "label": "Rating 1 Font Color",
+            "default": "#FFFFFFFF"
+          },
+          "rating1_stroke_width": {
+            "input_type": "number",
+            "label": "Rating 1 Stroke Width",
+            "default": 1,
+            "tooltip": "Font Stroke Width for the Overlay. Use any number greater than 0."
+          },
+          "rating1_stroke_color": {
+            "input_type": "text",
+            "label": "Rating 1 Stroke Color",
+            "default": "#00000000",
+            "tooltip": "Font Stroke Color for the Overlay. Hex format: #RRGGBBAA."
+          },
           "rating2": {
             "input_type": "select",
             "default": "audience",
@@ -822,6 +998,33 @@
                 "label": "Star"
               }
             ]
+          },
+          "rating2_font": {
+            "input_type": "text",
+            "label": "Rating 2 Font",
+            "default": "Inter-Medium.ttf"
+          },
+          "rating2_font_size": {
+            "input_type": "number",
+            "label": "Rating 2 Font Size",
+            "default": 55
+          },
+          "rating2_font_color": {
+            "input_type": "text",
+            "label": "Rating 2 Font Color",
+            "default": "#FFFFFFFF"
+          },
+          "rating2_stroke_width": {
+            "input_type": "number",
+            "label": "Rating 2 Stroke Width",
+            "default": 1,
+            "tooltip": "Font Stroke Width for the Overlay. Use any number greater than 0."
+          },
+          "rating2_stroke_color": {
+            "input_type": "text",
+            "label": "Rating 2 Stroke Color",
+            "default": "#00000000",
+            "tooltip": "Font Stroke Color for the Overlay. Hex format: #RRGGBBAA."
           },
           "back_align": {
             "input_type": "select",
@@ -1581,6 +1784,20 @@
             "default": "#FFFFFFFF"
           },
           {
+            "input_type": "number",
+            "key": "stroke_width",
+            "label": "Stroke Width",
+            "default": 1,
+            "tooltip": "Font Stroke Width for the Overlay. Use any number greater than 0."
+          },
+          {
+            "input_type": "text",
+            "key": "stroke_color",
+            "label": "Stroke Color",
+            "default": "#00000000",
+            "tooltip": "Font Stroke Color for the Overlay. Hex format: #RRGGBBAA."
+          },
+          {
             "input_type": "select",
             "key": "back_align",
             "label": "Backdrop Alignment",
@@ -1716,6 +1933,20 @@
             "key": "font_color",
             "label": "Font Color",
             "default": "#FFFFFFFF"
+          },
+          {
+            "input_type": "number",
+            "key": "stroke_width",
+            "label": "Stroke Width",
+            "default": 1,
+            "tooltip": "Font Stroke Width for the Overlay. Use any number greater than 0."
+          },
+          {
+            "input_type": "text",
+            "key": "stroke_color",
+            "label": "Stroke Color",
+            "default": "#00000000",
+            "tooltip": "Font Stroke Color for the Overlay. Hex format: #RRGGBBAA."
           },
           {
             "input_type": "select",
@@ -2064,6 +2295,18 @@
             "input_type": "text",
             "default": "#FFFFFFFF"
           },
+          "stroke_width": {
+            "label": "Stroke Width",
+            "input_type": "number",
+            "default": 1,
+            "tooltip": "Font Stroke Width for the Overlay. Use any number greater than 0."
+          },
+          "stroke_color": {
+            "label": "Stroke Color",
+            "input_type": "text",
+            "default": "#00000000",
+            "tooltip": "Font Stroke Color for the Overlay. Hex format: #RRGGBBAA."
+          },
           "hide_text": {
             "label": "Hide Text",
             "input_type": "toggle",
@@ -2216,6 +2459,18 @@
             "label": "Font Color",
             "input_type": "text",
             "default": "#FFFFFFFF"
+          },
+          "stroke_width": {
+            "label": "Stroke Width",
+            "input_type": "number",
+            "default": 1,
+            "tooltip": "Font Stroke Width for the Overlay. Use any number greater than 0."
+          },
+          "stroke_color": {
+            "label": "Stroke Color",
+            "input_type": "text",
+            "default": "#00000000",
+            "tooltip": "Font Stroke Color for the Overlay. Hex format: #RRGGBBAA."
           },
           "hide_text": {
             "label": "Hide Text",
@@ -2486,6 +2741,20 @@
             "default": "#FFFFFFFF"
           },
           {
+            "input_type": "number",
+            "key": "stroke_width",
+            "label": "Stroke Width",
+            "default": 1,
+            "tooltip": "Font Stroke Width for the Overlay. Use any number greater than 0."
+          },
+          {
+            "input_type": "text",
+            "key": "stroke_color",
+            "label": "Stroke Color",
+            "default": "#00000000",
+            "tooltip": "Font Stroke Color for the Overlay. Hex format: #RRGGBBAA."
+          },
+          {
             "input_type": "select",
             "key": "back_align",
             "label": "Backdrop Alignment",
@@ -2727,6 +2996,20 @@
             "key": "font_color",
             "label": "Font Color",
             "default": "#FFFFFFFF"
+          },
+          {
+            "input_type": "number",
+            "key": "stroke_width",
+            "label": "Stroke Width",
+            "default": 1,
+            "tooltip": "Font Stroke Width for the Overlay. Use any number greater than 0."
+          },
+          {
+            "input_type": "text",
+            "key": "stroke_color",
+            "label": "Stroke Color",
+            "default": "#00000000",
+            "tooltip": "Font Stroke Color for the Overlay. Hex format: #RRGGBBAA."
           },
           {
             "input_type": "select",

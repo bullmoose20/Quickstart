@@ -239,9 +239,25 @@ def _build_overlay_defaults():
             for key, value in offset_defaults.items():
                 base_defaults.setdefault(key, value)
 
-            entry = {"defaults": base_defaults, "offsets_by_type": per_type_offsets}
-            defaults[base_key] = entry
+            entry = defaults.get(base_key)
+            if not entry:
+                entry = {"defaults": base_defaults, "offsets_by_type": {}, "defaults_by_type": {}}
+                defaults[base_key] = entry
+            elif not entry.get("defaults"):
+                entry["defaults"] = base_defaults
+
             defaults[overlay_id] = entry
+
+            media_types = overlay.get("media_types") or []
+            for media_type in media_types:
+                if media_type not in {"movie", "show", "season", "episode"}:
+                    continue
+                entry["defaults_by_type"][media_type] = base_defaults
+                if offset_defaults:
+                    entry["offsets_by_type"][media_type] = offset_defaults
+            for media_type, offsets in per_type_offsets.items():
+                if media_type in {"movie", "show", "season", "episode"}:
+                    entry["offsets_by_type"][media_type] = offsets
 
             if base_key == "content_rating_commonsense":
                 defaults["commonsense"] = entry
@@ -281,6 +297,60 @@ def _prune_template_variables(template_vars, defaults):
 
 
 def optimize_template_variables(config_data, library_types=None):
+    def _reorder_ratings_template_vars(entry):
+        if not isinstance(entry, dict):
+            return
+        default_name = entry.get("default", "")
+        if not (isinstance(default_name, str) and (default_name == "ratings" or default_name.startswith("overlay_ratings"))):
+            return
+        tv = entry.get("template_variables")
+        if not isinstance(tv, dict) or not tv:
+            return
+        preferred_order = [
+            "builder_level",
+            "rating1",
+            "rating1_image",
+            "rating1_font",
+            "rating1_font_size",
+            "rating1_font_color",
+            "rating1_stroke_width",
+            "rating1_stroke_color",
+            "rating2",
+            "rating2_image",
+            "rating2_font",
+            "rating2_font_size",
+            "rating2_font_color",
+            "rating2_stroke_width",
+            "rating2_stroke_color",
+            "rating3",
+            "rating3_image",
+            "rating3_font",
+            "rating3_font_size",
+            "rating3_font_color",
+            "rating3_stroke_width",
+            "rating3_stroke_color",
+            "horizontal_position",
+            "horizontal_offset",
+            "vertical_offset",
+            "back_align",
+            "back_color",
+            "back_height",
+            "back_width",
+            "back_line_color",
+            "back_line_width",
+            "back_padding",
+            "back_radius",
+            "use_subtitles",
+        ]
+        ordered = {}
+        for key in preferred_order:
+            if key in tv:
+                ordered[key] = tv[key]
+        for key in tv:
+            if key not in ordered:
+                ordered[key] = tv[key]
+        entry["template_variables"] = ordered
+
     libraries_section = config_data.get("libraries", {})
     libraries = libraries_section.get("libraries")
     if not isinstance(libraries, dict):
@@ -348,13 +418,37 @@ def optimize_template_variables(config_data, library_types=None):
                     overlay_level = "movie" if library_type == "movie" else "show"
 
                 if overlay_level:
+                    type_defaults = defaults_entry.get("defaults_by_type", {}).get(overlay_level)
+                    if type_defaults:
+                        defaults = dict(type_defaults)
                     offsets = defaults_entry.get("offsets_by_type", {}).get(overlay_level)
                     if offsets:
                         defaults.update(offsets)
 
                 pruned = _prune_template_variables(tv, defaults)
+                always_keep = set()
+                if entry.get("default") in {"ratings", "overlay_ratings"}:
+                    always_keep.update(
+                        {
+                            "builder_level",
+                            "rating1",
+                            "rating1_image",
+                            "rating2",
+                            "rating2_image",
+                            "rating3",
+                            "rating3_image",
+                            "horizontal_position",
+                        }
+                    )
+                if "builder_level" in tv:
+                    always_keep.add("builder_level")
+                if always_keep:
+                    for key in always_keep:
+                        if key in tv:
+                            pruned[key] = tv[key]
                 if pruned:
                     entry["template_variables"] = pruned
+                    _reorder_ratings_template_vars(entry)
                 else:
                     entry.pop("template_variables", None)
 
@@ -646,6 +740,7 @@ def build_libraries_section(
             # Process Overlays
             overlay_key = helpers.extract_library_name(library_key)
             overlay_entries = []
+            overlay_name_order = []
 
             def prune_rating_template_vars(overlay_entry):
                 """
@@ -716,6 +811,60 @@ def build_libraries_section(
                 if name in {"commonsense", "overlay_content_rating_commonsense", "content_rating_commonsense"}:
                     return "content_rating_commonsense"
                 return name
+
+            def reorder_rating_template_vars(overlay_entry):
+                if not isinstance(overlay_entry, dict):
+                    return
+                default_name = overlay_entry.get("default", "")
+                if not (isinstance(default_name, str) and (default_name == "ratings" or default_name.startswith("overlay_ratings"))):
+                    return
+                tv = overlay_entry.get("template_variables")
+                if not isinstance(tv, dict) or not tv:
+                    return
+                preferred_order = [
+                    "builder_level",
+                    "rating1",
+                    "rating1_image",
+                    "rating1_font",
+                    "rating1_font_size",
+                    "rating1_font_color",
+                    "rating1_stroke_width",
+                    "rating1_stroke_color",
+                    "rating2",
+                    "rating2_image",
+                    "rating2_font",
+                    "rating2_font_size",
+                    "rating2_font_color",
+                    "rating2_stroke_width",
+                    "rating2_stroke_color",
+                    "rating3",
+                    "rating3_image",
+                    "rating3_font",
+                    "rating3_font_size",
+                    "rating3_font_color",
+                    "rating3_stroke_width",
+                    "rating3_stroke_color",
+                    "horizontal_position",
+                    "horizontal_offset",
+                    "vertical_offset",
+                    "back_align",
+                    "back_color",
+                    "back_height",
+                    "back_width",
+                    "back_line_color",
+                    "back_line_width",
+                    "back_padding",
+                    "back_radius",
+                    "use_subtitles",
+                ]
+                ordered = {}
+                for key in preferred_order:
+                    if key in tv:
+                        ordered[key] = tv[key]
+                for key in tv:
+                    if key not in ordered:
+                        ordered[key] = tv[key]
+                overlay_entry["template_variables"] = ordered
 
             if overlay_key and overlay_key in overlays:
                 raw_overlay_entries = overlays[overlay_key]
@@ -794,6 +943,10 @@ def build_libraries_section(
                                 if is_subtitles
                                 else "commonsense" if value == "commonsense" else f"content_rating_{value}" if "content_rating" in raw_name and isinstance(value, str) else raw_name
                             )
+
+                            sort_name = "languages" if is_subtitles else overlay_name
+                            if sort_name not in overlay_name_order:
+                                overlay_name_order.append(sort_name)
 
                             key_tuple = (overlay_name, is_subtitles, level)
                             overlay_groups.setdefault(key_tuple, True)
@@ -916,6 +1069,27 @@ def build_libraries_section(
                                 tv.pop(i_key, None)
                         if not tv:
                             ov.pop("template_variables", None)
+
+                    for ov in overlay_entries:
+                        reorder_rating_template_vars(ov)
+
+                    if overlay_name_order:
+                        order_map = {name: idx for idx, name in enumerate(overlay_name_order)}
+                        level_order = {"show": 0, "season": 1, "episode": 2}
+
+                        def overlay_sort_key(overlay_entry):
+                            name = overlay_entry.get("default", "")
+                            sort_name = "languages" if name == "languages_subtitles" else name
+                            name_index = order_map.get(sort_name, len(order_map))
+                            tv = overlay_entry.get("template_variables") or {}
+                            if not isinstance(tv, dict):
+                                tv = {}
+                            level = tv.get("builder_level", "show")
+                            level_index = level_order.get(level, 0)
+                            subtitles_index = 1 if tv.get("use_subtitles") else 0
+                            return (name_index, level_index, subtitles_index)
+
+                        overlay_entries.sort(key=overlay_sort_key)
 
                     entry["overlay_files"] = overlay_entries
 

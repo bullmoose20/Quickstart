@@ -509,7 +509,9 @@ const OverlayHandler = {
         format: getVal('format', '<<runtimeH>>h <<runtimeM>>m'),
         font: getVal('font', 'Inter-Medium.ttf'),
         font_size: getVal('font_size', 55),
-        font_color: getVal('font_color', '#FFFFFF')
+        font_color: getVal('font_color', '#FFFFFF'),
+        stroke_width: getVal('stroke_width', 1),
+        stroke_color: getVal('stroke_color', '#00000000')
       }
     }
 
@@ -532,18 +534,21 @@ const OverlayHandler = {
         text: getVal('text', ''),
         font: getVal('font', 'Inter-Medium.ttf'),
         font_size: getVal('font_size', 55),
-        font_color: getVal('font_color', '#FFFFFFFF')
+        font_color: getVal('font_color', '#FFFFFFFF'),
+        stroke_width: getVal('stroke_width', 1),
+        stroke_color: getVal('stroke_color', '#00000000')
       }
     }
 
-    const getTextBoxMetrics = (ctx, text, fontSize, padding = 10) => {
+    const getTextBoxMetrics = (ctx, text, fontSize, padding = 10, strokeWidth = 0) => {
       const metrics = ctx.measureText(text)
       const left = Math.ceil(metrics.actualBoundingBoxLeft || 0)
       const right = Math.ceil(metrics.actualBoundingBoxRight || metrics.width || 0)
       const ascent = Math.ceil(metrics.actualBoundingBoxAscent || fontSize * 0.8)
       const descent = Math.ceil(metrics.actualBoundingBoxDescent || fontSize * 0.2)
       const safePad = Math.ceil(fontSize * 0.2)
-      const pad = padding + Math.ceil(safePad / 2)
+      const strokePad = Math.ceil(Math.max(0, Number(strokeWidth) || 0))
+      const pad = padding + Math.ceil(safePad / 2) + strokePad
       return {
         width: left + right + pad * 2,
         height: ascent + descent + pad * 2,
@@ -574,7 +579,9 @@ const OverlayHandler = {
         text,
         font: getVal('font', 'Inter-Medium.ttf'),
         font_size: getVal('font_size', 55),
-        font_color: getVal('font_color', '#FFFFFFFF')
+        font_color: getVal('font_color', '#FFFFFFFF'),
+        stroke_width: getVal('stroke_width', 1),
+        stroke_color: getVal('stroke_color', '#00000000')
       }
     }
 
@@ -638,7 +645,9 @@ const OverlayHandler = {
         offset: Number(getVal('offset', 10)) || 10,
         font: String(getVal('font', 'Inter-Bold.ttf') || 'Inter-Bold.ttf'),
         font_size: Number(getVal('font_size', 50)) || 50,
-        font_color: String(getVal('font_color', '#FFFFFFFF') || '#FFFFFFFF')
+        font_color: String(getVal('font_color', '#FFFFFFFF') || '#FFFFFFFF'),
+        stroke_width: Number(getVal('stroke_width', 1)) || 1,
+        stroke_color: String(getVal('stroke_color', '#00000000') || '#00000000')
       }
     }
 
@@ -806,10 +815,58 @@ const OverlayHandler = {
         audience: '85%',
         user: '85%'
       }
+      const fontDefaults = {
+        font: 'Inter-Medium.ttf',
+        font_size: 55,
+        font_color: '#FFFFFFFF',
+        stroke_width: 1,
+        stroke_color: '#00000000'
+      }
+      const getInputValue = (input, fallback) => {
+        if (!input) return fallback
+        const defaultVal = input.dataset?.default ?? fallback
+        if (input.type === 'number') {
+          const n = Number(input.value)
+          if (Number.isFinite(n)) return n
+          const fallbackNum = Number(defaultVal)
+          return Number.isFinite(fallbackNum) ? fallbackNum : fallback
+        }
+        if (input.tagName === 'SELECT') {
+          return input.value || defaultVal
+        }
+        return input.value || defaultVal
+      }
+      const getSlotValue = (key, fallback) => {
+        return getInputValue(getTemplateInput(cfg, key), fallback)
+      }
       const slots = [
-        { ratingKey: 'rating1', imageKey: 'rating1_image' },
-        { ratingKey: 'rating2', imageKey: 'rating2_image' },
-        { ratingKey: 'rating3', imageKey: 'rating3_image' }
+        {
+          ratingKey: 'rating1',
+          imageKey: 'rating1_image',
+          fontKey: 'rating1_font',
+          fontSizeKey: 'rating1_font_size',
+          fontColorKey: 'rating1_font_color',
+          strokeWidthKey: 'rating1_stroke_width',
+          strokeColorKey: 'rating1_stroke_color'
+        },
+        {
+          ratingKey: 'rating2',
+          imageKey: 'rating2_image',
+          fontKey: 'rating2_font',
+          fontSizeKey: 'rating2_font_size',
+          fontColorKey: 'rating2_font_color',
+          strokeWidthKey: 'rating2_stroke_width',
+          strokeColorKey: 'rating2_stroke_color'
+        },
+        {
+          ratingKey: 'rating3',
+          imageKey: 'rating3_image',
+          fontKey: 'rating3_font',
+          fontSizeKey: 'rating3_font_size',
+          fontColorKey: 'rating3_font_color',
+          strokeWidthKey: 'rating3_stroke_width',
+          strokeColorKey: 'rating3_stroke_color'
+        }
       ]
       const isEmpty = (val) => {
         if (val === null || val === undefined) return true
@@ -830,13 +887,39 @@ const OverlayHandler = {
         try {
           const img = await loadImageWithFallback(urls)
           const text = ratingTextMap[String(ratingVal).toLowerCase()] || 'NR'
-          items.push({ img, text })
+          items.push({
+            img,
+            text,
+            fontFile: getSlotValue(slot.fontKey, fontDefaults.font),
+            fontSize: getSlotValue(slot.fontSizeKey, fontDefaults.font_size),
+            fontColor: getSlotValue(slot.fontColorKey, fontDefaults.font_color),
+            strokeWidth: getSlotValue(slot.strokeWidthKey, fontDefaults.stroke_width),
+            strokeColor: getSlotValue(slot.strokeColorKey, fontDefaults.stroke_color)
+          })
         } catch (err) {
           console.warn('[OverlayBoards] Failed to load rating image', { value: imageVal, label, err })
         }
       }
 
       if (!items.length) return resolveOverlayImage(cfg)
+
+      const fontFamilyMap = new Map()
+      const fontLoads = []
+      items.forEach((item) => {
+        const fontFile = String(item.fontFile || '').trim()
+        if (!fontFile || fontFamilyMap.has(fontFile)) return
+        fontFamilyMap.set(fontFile, null)
+        fontLoads.push(
+          ensureRuntimeFontLoaded(fontFile).then((family) => {
+            if (family) {
+              fontFamilyMap.set(fontFile, family)
+            }
+          })
+        )
+      })
+      if (fontLoads.length) {
+        await Promise.all(fontLoads)
+      }
 
       const vars = getBackdropVars(cfg)
       const boxWidth = Math.max(1, Number(vars.back_width) || 160)
@@ -856,8 +939,6 @@ const OverlayHandler = {
         ? Math.max(0, Number(vars.back_padding))
         : Math.round(boxHeight * 0.08)
 
-      const fontSize = Math.max(10, Math.round(boxHeight * 0.32))
-      const fontFamily = 'Inter, "Arial Black", Arial, sans-serif'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'alphabetic'
 
@@ -877,10 +958,17 @@ const OverlayHandler = {
           ctx.stroke()
         }
 
+        const fontFile = String(item.fontFile || fontDefaults.font || 'Inter-Medium.ttf')
+        const { family: normalizedFamily } = normalizeFontFile(fontFile)
+        const fontFamily = fontFamilyMap.get(fontFile) || normalizedFamily || 'Inter-Medium'
+        const fontSize = Math.max(1, Number(item.fontSize) || fontDefaults.font_size)
+        const fontColor = item.fontColor || fontDefaults.font_color
+        const strokeWidth = Math.max(0, Number(item.strokeWidth) || 0)
+        const strokeColor = item.strokeColor || fontDefaults.stroke_color
+
         const textBottom = boxTop + boxHeight - innerPad
-        ctx.fillStyle = '#FFFFFF'
-        ctx.font = `700 ${fontSize}px ${fontFamily}`
-        ctx.fillText(item.text, boxWidth / 2, textBottom)
+        ctx.font = `700 ${fontSize}px "${fontFamily}"`
+        drawTextWithStroke(ctx, item.text, boxWidth / 2, textBottom, fontColor, strokeColor, strokeWidth)
 
         const iconMaxHeight = Math.max(1, boxHeight - fontSize - (innerPad * 2))
         const iconMaxWidth = Math.max(1, boxWidth - (innerPad * 2))
@@ -927,6 +1015,20 @@ const OverlayHandler = {
         b: toInt(b, fallback.b),
         a: toInt(a, Math.round((fallback.a ?? 0) * 255)) / 255
       }
+    }
+
+    const drawTextWithStroke = (ctx, text, x, y, fontColor, strokeColor, strokeWidth) => {
+      const width = Math.max(0, Number(strokeWidth) || 0)
+      if (width > 0) {
+        const stroke = parseHexColor(strokeColor, { r: 0, g: 0, b: 0, a: 0 })
+        if (stroke.a > 0) {
+          ctx.lineWidth = width
+          ctx.strokeStyle = `rgba(${stroke.r}, ${stroke.g}, ${stroke.b}, ${stroke.a})`
+          ctx.strokeText(text, x, y)
+        }
+      }
+      ctx.fillStyle = fontColor || '#FFFFFFFF'
+      ctx.fillText(text, x, y)
     }
 
     const drawRoundedRect = (ctx, x, y, width, height, radius) => {
@@ -1077,8 +1179,8 @@ const OverlayHandler = {
           const textTop = boxY + ((boxHeight - row.textHeight) / 2)
           const textY = textTop + row.textAscent
           const fontColor = parseHexColor(vars.font_color, { r: 255, g: 255, b: 255, a: 1 })
-          ctx.fillStyle = `rgba(${fontColor.r}, ${fontColor.g}, ${fontColor.b}, ${fontColor.a})`
-          ctx.fillText(textValue, textX, textY)
+          const fontColorCss = `rgba(${fontColor.r}, ${fontColor.g}, ${fontColor.b}, ${fontColor.a})`
+          drawTextWithStroke(ctx, textValue, textX, textY, fontColorCss, vars.stroke_color, vars.stroke_width)
         }
 
         if (groupAlignment === 'horizontal') {
@@ -1222,6 +1324,8 @@ const OverlayHandler = {
       const font = getVal('font', 'Inter-Medium.ttf')
       const fontSize = getVal('font_size', 55)
       const fontColor = getVal('font_color', '#FFFFFFFF')
+      const strokeWidth = getVal('stroke_width', 1)
+      const strokeColor = getVal('stroke_color', '#00000000')
 
       const fontFamily = (await ensureRuntimeFontLoaded(font)) || normalizeFontFile(font).family || 'Inter-Medium'
 
@@ -1230,26 +1334,25 @@ const OverlayHandler = {
       const ctx = canvas.getContext('2d')
       ctx.font = `${fontSize}px "${fontFamily}"`
       const textString = `${textVal}${postText || ''}`
-      const textBox = getTextBoxMetrics(ctx, textString, fontSize, 10)
+      const textBox = getTextBoxMetrics(ctx, textString, fontSize, 10, strokeWidth)
 
       canvas.width = img.width + addonOffset + textBox.width
       canvas.height = Math.max(img.height, textBox.height)
 
       ctx.drawImage(img, 0, 0)
       ctx.font = `${fontSize}px "${fontFamily}"`
-      ctx.fillStyle = fontColor
       ctx.textAlign = 'left'
       ctx.textBaseline = 'alphabetic'
       const textTop = Math.max(0, Math.round((canvas.height - textBox.height) / 2))
       const textX = img.width + addonOffset + textBox.pad + textBox.left
       const textY = textTop + textBox.pad + textBox.ascent
-      ctx.fillText(textString, textX, textY)
+      drawTextWithStroke(ctx, textString, textX, textY, fontColor, strokeColor, strokeWidth)
 
       return canvas.toDataURL('image/png')
     }
 
     const buildRuntimeDataUrl = (cfg, loadedFamily = null) => {
-      const { text, format, font, font_size: fontSize, font_color: fontColor } = getRuntimeVars(cfg)
+      const { text, format, font, font_size: fontSize, font_color: fontColor, stroke_width: strokeWidth, stroke_color: strokeColor } = getRuntimeVars(cfg)
       const { family: normalizedFamily } = normalizeFontFile(font)
       const runtimeMinutes = 93
       const runtimeH = Math.floor(runtimeMinutes / 60)
@@ -1266,7 +1369,7 @@ const OverlayHandler = {
       const measureCtx = measureCanvas.getContext('2d')
       if (!measureCtx) return cfg.image
       measureCtx.font = `${fontSize || 55}px "${loadedFamily || normalizedFamily || 'Inter'}"`
-      const textBox = getTextBoxMetrics(measureCtx, fullText, fontSize, 10)
+      const textBox = getTextBoxMetrics(measureCtx, fullText, fontSize, 10, strokeWidth)
       const canvasWidth = textBox.width
       const canvasHeight = textBox.height
 
@@ -1277,12 +1380,11 @@ const OverlayHandler = {
       if (!ctx) return cfg.image
 
       ctx.clearRect(0, 0, canvas.width, canvas.height)
-      ctx.fillStyle = fontColor || '#FFFFFF'
       const family = loadedFamily || normalizedFamily || 'Inter'
       ctx.font = `${fontSize || 55}px "${family}"`
       ctx.textAlign = 'left'
       ctx.textBaseline = 'alphabetic'
-      ctx.fillText(fullText, textBox.pad + textBox.left, textBox.pad + textBox.ascent)
+      drawTextWithStroke(ctx, fullText, textBox.pad + textBox.left, textBox.pad + textBox.ascent, fontColor || '#FFFFFF', strokeColor, strokeWidth)
 
       // Store natural size so dragging/clamping respects the smaller overlay
       cfg.naturalWidth = canvasWidth
@@ -1292,7 +1394,7 @@ const OverlayHandler = {
     }
 
     const buildSimpleTextDataUrl = (cfg, vars, loadedFamily = null) => {
-      const { text, font, font_size: fontSize, font_color: fontColor } = vars
+      const { text, font, font_size: fontSize, font_color: fontColor, stroke_width: strokeWidth, stroke_color: strokeColor } = vars
       const { family: normalizedFamily } = normalizeFontFile(font)
       const content = text || ''
 
@@ -1300,7 +1402,7 @@ const OverlayHandler = {
       const measureCtx = measureCanvas.getContext('2d')
       if (!measureCtx) return cfg.image
       measureCtx.font = `${fontSize || 55}px "${loadedFamily || normalizedFamily || 'Inter'}"`
-      const textBox = getTextBoxMetrics(measureCtx, content, fontSize, 10)
+      const textBox = getTextBoxMetrics(measureCtx, content, fontSize, 10, strokeWidth)
       const canvasWidth = textBox.width
       const canvasHeight = textBox.height
 
@@ -1311,12 +1413,11 @@ const OverlayHandler = {
       if (!ctx) return cfg.image
 
       ctx.clearRect(0, 0, canvas.width, canvas.height)
-      ctx.fillStyle = fontColor || '#FFFFFFFF'
       const family = loadedFamily || normalizedFamily || 'Inter'
       ctx.font = `${fontSize || 55}px "${family}"`
       ctx.textAlign = 'left'
       ctx.textBaseline = 'alphabetic'
-      ctx.fillText(content, textBox.pad + textBox.left, textBox.pad + textBox.ascent)
+      drawTextWithStroke(ctx, content, textBox.pad + textBox.left, textBox.pad + textBox.ascent, fontColor || '#FFFFFFFF', strokeColor, strokeWidth)
 
       cfg.naturalWidth = canvasWidth
       cfg.naturalHeight = canvasHeight
@@ -2464,7 +2565,9 @@ const OverlayHandler = {
             `[name="${templateName}[format]"]`,
             `[name="${templateName}[font]"]`,
             `[name="${templateName}[font_size]"]`,
-            `[name="${templateName}[font_color]"]`
+            `[name="${templateName}[font_color]"]`,
+            `[name="${templateName}[stroke_width]"]`,
+            `[name="${templateName}[stroke_color]"]`
           ]
           if (BACKDROP_TEXT_OVERLAYS.has(cfg.id)) {
             runtimeSelectors.push(
@@ -2656,7 +2759,9 @@ const OverlayHandler = {
             `[name="${templateName}[text]"]`,
             `[name="${templateName}[font]"]`,
             `[name="${templateName}[font_size]"]`,
-            `[name="${templateName}[font_color]"]`
+            `[name="${templateName}[font_color]"]`,
+            `[name="${templateName}[stroke_width]"]`,
+            `[name="${templateName}[stroke_color]"]`
           ]
           if (BACKDROP_TEXT_OVERLAYS.has(cfg.id)) {
             textSelectors.push(
@@ -2704,7 +2809,9 @@ const OverlayHandler = {
             `[name="${templateName}[text_ended]"]`,
             `[name="${templateName}[font]"]`,
             `[name="${templateName}[font_size]"]`,
-            `[name="${templateName}[font_color]"]`
+            `[name="${templateName}[font_color]"]`,
+            `[name="${templateName}[stroke_width]"]`,
+            `[name="${templateName}[stroke_color]"]`
           ]
           if (BACKDROP_TEXT_OVERLAYS.has(cfg.id)) {
             statusSelectors.push(
@@ -2737,10 +2844,25 @@ const OverlayHandler = {
           const ratingSelectors = [
             `[name="${templateName}[rating1]"]`,
             `[name="${templateName}[rating1_image]"]`,
+            `[name="${templateName}[rating1_font]"]`,
+            `[name="${templateName}[rating1_font_size]"]`,
+            `[name="${templateName}[rating1_font_color]"]`,
+            `[name="${templateName}[rating1_stroke_width]"]`,
+            `[name="${templateName}[rating1_stroke_color]"]`,
             `[name="${templateName}[rating2]"]`,
             `[name="${templateName}[rating2_image]"]`,
+            `[name="${templateName}[rating2_font]"]`,
+            `[name="${templateName}[rating2_font_size]"]`,
+            `[name="${templateName}[rating2_font_color]"]`,
+            `[name="${templateName}[rating2_stroke_width]"]`,
+            `[name="${templateName}[rating2_stroke_color]"]`,
             `[name="${templateName}[rating3]"]`,
-            `[name="${templateName}[rating3_image]"]`
+            `[name="${templateName}[rating3_image]"]`,
+            `[name="${templateName}[rating3_font]"]`,
+            `[name="${templateName}[rating3_font_size]"]`,
+            `[name="${templateName}[rating3_font_color]"]`,
+            `[name="${templateName}[rating3_stroke_width]"]`,
+            `[name="${templateName}[rating3_stroke_color]"]`
           ]
           const inputs = cfg.container.querySelectorAll(ratingSelectors.join(', '))
           inputs.forEach(input => {
@@ -2762,6 +2884,8 @@ const OverlayHandler = {
             `[name="${templateName}[font]"]`,
             `[name="${templateName}[font_size]"]`,
             `[name="${templateName}[font_color]"]`,
+            `[name="${templateName}[stroke_width]"]`,
+            `[name="${templateName}[stroke_color]"]`,
             `[name="${templateName}[back_color]"]`,
             `[name="${templateName}[back_height]"]`,
             `[name="${templateName}[back_width]"]`,
@@ -2816,7 +2940,7 @@ const OverlayHandler = {
           }
           const templateName = cfg.container.dataset.overlayTemplate
           const inputs = cfg.container.querySelectorAll(
-            `[name="${templateName}[text]"], [name="${templateName}[post_text]"], [name="${templateName}[addon_offset]"], [name="${templateName}[font]"], [name="${templateName}[font_size]"], [name="${templateName}[font_color]"], [name="${templateName}[back_align]"], [name="${templateName}[back_color]"], [name="${templateName}[back_height]"], [name="${templateName}[back_width]"], [name="${templateName}[back_line_color]"], [name="${templateName}[back_line_width]"], [name="${templateName}[back_padding]"], [name="${templateName}[back_radius]"]`
+            `[name="${templateName}[text]"], [name="${templateName}[post_text]"], [name="${templateName}[addon_offset]"], [name="${templateName}[font]"], [name="${templateName}[font_size]"], [name="${templateName}[font_color]"], [name="${templateName}[stroke_width]"], [name="${templateName}[stroke_color]"], [name="${templateName}[back_align]"], [name="${templateName}[back_color]"], [name="${templateName}[back_height]"], [name="${templateName}[back_width]"], [name="${templateName}[back_line_color]"], [name="${templateName}[back_line_width]"], [name="${templateName}[back_padding]"], [name="${templateName}[back_radius]"]`
           )
           inputs.forEach(input => {
             input.addEventListener('input', refreshCommonsense)
