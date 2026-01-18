@@ -34,6 +34,7 @@ GITHUB_API_BRANCH = "https://api.github.com/repos/kometa-team/Kometa/branches/{b
 GITHUB_ZIP_URL = "https://codeload.github.com/kometa-team/Kometa/zip/refs/heads/{branch}"
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "gif", "bmp"}
+FONT_EXTENSIONS = {".ttf", ".otf"}
 
 BASE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 WORKING_DIR = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else BASE_DIR
@@ -882,7 +883,7 @@ def contains_non_latin(text):
     return bool(re.search(r"[^\x00-\x7F]", text))
 
 
-def save_to_named_config(yaml_text, config_name):
+def save_to_named_config(yaml_text, config_name, font_refs=None):
     config_dir = Path(CONFIG_DIR)
     kometa_root = Path(app.config.get("KOMETA_ROOT", "."))
     kometa_config_dir = kometa_root / "config"
@@ -891,17 +892,34 @@ def save_to_named_config(yaml_text, config_name):
     latest_filename = f"{name}_config.yml"
     latest_path = config_dir / latest_filename
     kometa_path = kometa_config_dir / latest_filename
+    history_limit = app.config.get("QS_CONFIG_HISTORY", 0)
+    try:
+        history_limit = int(str(history_limit).strip())
+    except (TypeError, ValueError):
+        history_limit = 0
+    if history_limit < 0:
+        history_limit = 0
 
     # If latest exists, archive it to _1, _2, etc.
     if latest_path.exists():
+        archive_dir = config_dir / "archives" / name
+        archive_dir.mkdir(parents=True, exist_ok=True)
         counter = 1
         while True:
-            archive_path = config_dir / f"{name}_config_{counter}.yml"
+            archive_path = archive_dir / f"{name}_config_{counter}.yml"
             if not archive_path.exists():
                 latest_path.rename(archive_path)
                 ts_log(f"Archived old config to: {archive_path}")
                 break
             counter += 1
+        if history_limit > 0:
+            archives = sorted(archive_dir.glob(f"{name}_config_*.yml"), key=lambda p: p.stat().st_mtime)
+            if len(archives) > history_limit:
+                for old_path in archives[: len(archives) - history_limit]:
+                    try:
+                        old_path.unlink()
+                    except Exception as exc:
+                        ts_log(f"Failed to prune archive {old_path}: {exc}", level="WARNING")
 
     # Save the new config to both locations
     config_dir.mkdir(parents=True, exist_ok=True)
@@ -911,6 +929,18 @@ def save_to_named_config(yaml_text, config_name):
         f.write(yaml_text)
     with open(kometa_path, "w", encoding="utf-8") as f:
         f.write(yaml_text)
+
+    if font_refs:
+        try:
+            font_result = copy_fonts_to_kometa(font_refs, kometa_root=kometa_root)
+            missing = font_result.get("missing", [])
+            errors = font_result.get("errors", [])
+            if missing:
+                ts_log(f"Missing fonts not copied to Kometa: {', '.join(missing)}", level="WARNING")
+            for err in errors:
+                ts_log(err, level="WARNING")
+        except Exception as exc:
+            ts_log(f"Failed to sync fonts to Kometa: {exc}", level="WARNING")
 
     ts_log(f"Saved new config to: {latest_path}")
     ts_log(f"Also copied config to: {kometa_path}")
@@ -1623,6 +1653,214 @@ def get_kometa_root_path() -> Path:
     """
     base = app.config.get("KOMETA_ROOT") or session.get("kometa_root") or os.path.join(CONFIG_DIR, "kometa")
     return Path(os.path.normpath(base)).resolve()
+
+
+def get_custom_fonts_dir() -> Path:
+    return Path(CONFIG_DIR) / "fonts"
+
+
+def get_kometa_fonts_dir(kometa_root: Path | None = None) -> Path:
+    root = Path(kometa_root) if kometa_root else get_kometa_root_path()
+    return root / "config" / "fonts"
+
+
+def get_font_dirs(include_static: bool = True, include_custom: bool = True) -> list[Path]:
+    dirs: list[Path] = []
+    seen: set[str] = set()
+
+    if include_custom:
+        for path in (get_custom_fonts_dir(), get_kometa_fonts_dir()):
+            key = str(path)
+            if key not in seen:
+                dirs.append(path)
+                seen.add(key)
+
+    if include_static:
+        for base in (MEIPASS_DIR, BASE_DIR, WORKING_DIR):
+            path = Path(base) / "static" / "fonts"
+            key = str(path)
+            if key not in seen:
+                dirs.append(path)
+                seen.add(key)
+
+    return dirs
+
+
+def list_custom_fonts() -> list[str]:
+    fonts: set[str] = set()
+    for folder in (get_custom_fonts_dir(), get_kometa_fonts_dir()):
+        if not folder.is_dir():
+            continue
+        for entry in folder.iterdir():
+            if entry.is_file() and entry.suffix.lower() in FONT_EXTENSIONS:
+                fonts.add(entry.name)
+    return sorted(fonts)
+
+
+def list_available_fonts(include_static: bool = True, include_custom: bool = True) -> list[str]:
+    fonts: set[str] = set()
+    for folder in get_font_dirs(include_static=include_static, include_custom=include_custom):
+        if not folder.is_dir():
+            continue
+        for entry in folder.iterdir():
+            if entry.is_file() and entry.suffix.lower() in FONT_EXTENSIONS:
+                fonts.add(entry.name)
+    return sorted(fonts)
+
+
+def sync_custom_fonts(kometa_root: Path | None = None) -> list[str]:
+    source_dir = get_custom_fonts_dir()
+    if not source_dir.is_dir():
+        return []
+    dest_dir = get_kometa_fonts_dir(kometa_root)
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    copied: list[str] = []
+    for entry in source_dir.iterdir():
+        if entry.is_file() and entry.suffix.lower() in FONT_EXTENSIONS:
+            shutil.copy2(entry, dest_dir / entry.name)
+            copied.append(entry.name)
+    return copied
+
+
+def collect_font_references(config_data) -> list[str]:
+    fonts: set[str] = set()
+
+    def normalize(value):
+        if isinstance(value, dict):
+            raw = value.get("value")
+            if isinstance(raw, str):
+                return raw.strip()
+            return None
+        if isinstance(value, str):
+            return value.strip()
+        return None
+
+    def walk(obj):
+        if isinstance(obj, dict):
+            for key, val in obj.items():
+                if isinstance(key, str) and (key == "font" or key.endswith("_font")):
+                    norm = normalize(val)
+                    if norm and norm.lower() != "none":
+                        fonts.add(norm)
+                walk(val)
+        elif isinstance(obj, list):
+            for item in obj:
+                walk(item)
+
+    walk(config_data)
+    return sorted(fonts)
+
+
+def copy_fonts_to_kometa(font_refs, kometa_root: Path | None = None) -> dict:
+    dest_dir = get_kometa_fonts_dir(kometa_root)
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    sources = get_font_dirs(include_static=True, include_custom=True)
+    copied: list[str] = []
+    missing: list[str] = []
+    errors: list[str] = []
+
+    for ref in font_refs or []:
+        ref_str = str(ref or "").strip()
+        if not ref_str:
+            continue
+        base = os.path.basename(ref_str)
+        if not base:
+            continue
+
+        source_path = None
+        candidate = Path(ref_str)
+        if candidate.exists():
+            source_path = candidate
+        else:
+            for folder in sources:
+                candidate = Path(folder) / base
+                if candidate.exists():
+                    source_path = candidate
+                    break
+
+        if source_path is None:
+            missing.append(base)
+            continue
+
+        dest_path = dest_dir / base
+        try:
+            if dest_path.resolve() == source_path.resolve():
+                continue
+        except Exception:
+            pass
+
+        try:
+            shutil.copy2(source_path, dest_path)
+            copied.append(base)
+        except Exception as exc:
+            errors.append(f"Failed to copy {source_path} -> {dest_path}: {exc}")
+
+    return {"copied": copied, "missing": missing, "errors": errors}
+
+
+def migrate_config_archives(history_limit: int | None = None) -> dict:
+    """Move legacy *_config*.yml into config/archives/<name>/ and optionally prune."""
+    config_dir = Path(CONFIG_DIR)
+    archive_root = config_dir / "archives"
+    archive_pattern = re.compile(r"^(?P<name>.+)_config_(?P<suffix>\d+)\.yml$", re.IGNORECASE)
+    current_pattern = re.compile(r"^(?P<name>.+)_config\.yml$", re.IGNORECASE)
+
+    moved = 0
+    errors: list[str] = []
+
+    if history_limit is None:
+        history_limit = 0
+    try:
+        history_limit = int(str(history_limit).strip())
+    except (TypeError, ValueError):
+        history_limit = 0
+    if history_limit < 0:
+        history_limit = 0
+
+    def move_config(path: Path, name: str) -> None:
+        nonlocal moved
+        dest_dir = archive_root / name
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        dest_path = dest_dir / path.name
+        counter = 1
+        while dest_path.exists():
+            dest_path = dest_dir / f"{path.stem}_moved{counter}{path.suffix}"
+            counter += 1
+        try:
+            shutil.move(str(path), str(dest_path))
+            moved += 1
+        except Exception as exc:
+            errors.append(f"Failed to move {path} -> {dest_path}: {exc}")
+
+    for path in config_dir.glob("*_config_*.yml"):
+        if not path.is_file():
+            continue
+        match = archive_pattern.match(path.name)
+        if not match:
+            continue
+        move_config(path, match.group("name"))
+
+    for path in config_dir.glob("*_config.yml"):
+        if not path.is_file():
+            continue
+        match = current_pattern.match(path.name)
+        if not match:
+            continue
+        move_config(path, match.group("name"))
+
+    if history_limit > 0 and archive_root.exists():
+        for dest_dir in archive_root.iterdir():
+            if not dest_dir.is_dir():
+                continue
+            archives = sorted(dest_dir.glob("*.yml"), key=lambda p: p.stat().st_mtime)
+            if len(archives) > history_limit:
+                for old_path in archives[: len(archives) - history_limit]:
+                    try:
+                        old_path.unlink()
+                    except Exception as exc:
+                        errors.append(f"Failed to prune {old_path}: {exc}")
+
+    return {"moved": moved, "errors": errors, "history_limit": history_limit}
 
 
 def _unwrap_doublewrap(s: str) -> str:

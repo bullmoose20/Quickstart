@@ -68,6 +68,44 @@ def _normalize_template_value(value):
     return value
 
 
+def _rewrite_custom_font_paths(config_data):
+    available_fonts = set(helpers.list_available_fonts(include_static=True, include_custom=True))
+    if not available_fonts:
+        return config_data
+
+    def normalize_font_value(value):
+        if isinstance(value, dict):
+            raw = value.get("value")
+            if isinstance(raw, str):
+                updated = normalize_font_value(raw)
+                if updated != raw:
+                    value["value"] = updated
+            return value
+        if not isinstance(value, str):
+            return value
+        stripped = value.strip()
+        if not stripped:
+            return value
+        base = os.path.basename(stripped)
+        if base in available_fonts:
+            return f"config/fonts/{base}"
+        return value
+
+    def walk(obj):
+        if isinstance(obj, dict):
+            for key, val in obj.items():
+                if isinstance(key, str) and (key == "font" or key.endswith("_font")):
+                    obj[key] = normalize_font_value(val)
+                else:
+                    walk(val)
+        elif isinstance(obj, list):
+            for item in obj:
+                walk(item)
+
+    walk(config_data)
+    return config_data
+
+
 def _coerce_bool(value):
     if isinstance(value, bool):
         return value
@@ -1708,6 +1746,11 @@ def build_config(header_style="standard", config_name=None):
     qs_port = app.config.get("QS_PORT", "Unknown")
     qs_debug = "Enabled" if app.config.get("QS_DEBUG") else "Disabled"
     qs_theme = app.config.get("QS_THEME", "kometa")
+    qs_config_history = app.config.get("QS_CONFIG_HISTORY", 0)
+    if qs_config_history == 0:
+        qs_config_history_display = "Keep all (0)"
+    else:
+        qs_config_history_display = str(qs_config_history)
     library_names = list(movie_libraries.values()) + list(show_libraries.values())
     library_details = helpers.get_library_summaries(library_names)
 
@@ -1728,6 +1771,7 @@ def build_config(header_style="standard", config_name=None):
         f"# Quickstart Debug: {qs_debug}\n"
         f"# Quickstart Theme: {qs_theme}\n"
         f"# Quickstart Optimize Template Defaults: {'Enabled' if app.config.get('QS_OPTIMIZE_DEFAULTS', True) else 'Disabled'}\n"
+        f"# Quickstart Config Archive History: {qs_config_history_display}\n"
         f"{'# ' + plex_summary.replace(chr(10), chr(10) + '# ')}\n"
         f"# Quickstart: {quickstart_version} | Branch: {quickstart_branch} | Environment: {quickstart_environment}\n"
         f"###\n"
@@ -1937,6 +1981,7 @@ def build_config(header_style="standard", config_name=None):
 
     # Apply enforce_string_fields to ensure proper formatting
     config_data = helpers.enforce_string_fields(config_data, helpers.STRING_FIELDS)
+    config_data = _rewrite_custom_font_paths(config_data)
 
     for section_key, section_stem in ordered_sections:
         if section_key in config_data:
