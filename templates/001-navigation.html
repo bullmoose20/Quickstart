@@ -1,5 +1,6 @@
 <form method="post" id="configForm" name="configForm">
   {% set qs_is_docker = version_info and version_info.running_on and ('Docker' in version_info.running_on) %}
+  {% set hide_step_nav = page_info.get('hide_step_nav', False) %}
   <div id="{{ page_info['title'] }}Section">
 
     <!-- Page Title + top-right badge -->
@@ -35,7 +36,7 @@
       <div class="container-fluid d-flex justify-content-between align-items-center">
 
         <!-- Previous Button (Hidden on Start Page) -->
-        {% if page_info['template_name'] != '001-start' %}
+        {% if not hide_step_nav and page_info['template_name'] != '001-start' %}
         <button type="submit" class="btn nav-button d-none d-md-inline-flex" onclick="loading('prev')"
           title="Previous Step: {{ page_info['prev_page_name'] }}" formaction="/step/{{ page_info['prev_page'] }}">
           <i id="prev-spinner-icon" class="fa fa-arrow-left"></i> Previous
@@ -43,6 +44,51 @@
         {% endif %}
 
         <!-- Jump-To Dropdown -->
+        {% if hide_step_nav %}
+        <a class="btn nav-button" href="/step/900-final" title="Back to Final Validation">
+          <i class="fa fa-arrow-left"></i> Back to Final
+        </a>
+        {% if page_info.get('show_jump_to') %}
+        <div class="dropdown mx-auto">
+          <button class="btn nav-button dropdown-toggle" id="stepDropdown" data-bs-toggle="dropdown"
+            aria-expanded="false">
+            <i class="fa fa-list"></i>
+            Jump to: Pages
+          </button>
+
+          <ul class="dropdown-menu dropdown-menu-end text-center" style="max-height: 50vh; overflow-y: auto;">
+            <li class="dropdown-item progress-container">
+              <div class="progress" style="height: 5px;">
+                <div class="progress-bar bg-success" style="width: {{ page_info.get('progress', 0) }}%;"></div>
+              </div>
+              <small class="text-muted">{{ page_info.get('progress', 0) }}% Completed</small>
+            </li>
+            <li>
+              <hr class="dropdown-divider">
+            </li>
+
+            {% for file, name in template_list %}
+            {% if name == 'Final Validation' %}
+            <li>
+              <hr class="dropdown-divider">
+            </li>
+            {% endif %}
+            <li>
+              <a class="dropdown-item {% if file.rsplit('.', 1)[0] == page_info['template_name'] %} active {% endif %}"
+                href="javascript:void(0);" onclick="jumpTo('{{ file.rsplit('.', 1)[0] }}')">
+                {{ name }}
+              </a>
+            </li>
+            {% if name == 'Start' %}
+            <li>
+              <hr class="dropdown-divider">
+            </li>
+            {% endif %}
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+        {% else %}
         <div class="dropdown">
           <button class="btn nav-button dropdown-toggle" id="stepDropdown" data-bs-toggle="dropdown"
             aria-expanded="false">
@@ -87,9 +133,10 @@
             {% endfor %}
           </ul>
         </div>
+        {% endif %}
 
         <!-- Next Button (Hidden on Final Page) -->
-        {% if page_info['template_name'] != '910-sponsor' %}
+        {% if not hide_step_nav and page_info['template_name'] != '910-sponsor' %}
         <button type="submit" class="btn nav-button d-none d-md-inline-flex" onclick="loading('next')"
           title="Next Step: {{ page_info['next_page_name'] }}" formaction="/step/{{ page_info['next_page'] }}">
           Next <i id="next-spinner-icon" class="fa fa-arrow-right"></i>

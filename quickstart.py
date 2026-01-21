@@ -53,12 +53,60 @@ from werkzeug.wrappers import Request
 Request.max_form_parts = 100000  # Allow more form fields if needed
 
 from flask_session import Session
-from modules import validations, output, persistence, helpers, database
+from modules import validations, output, persistence, helpers, database, logscan
 from typing import Dict, Any
 
 # A very simple in-memory progress store
 CLONE_PROGRESS: Dict[str, Dict[str, Any]] = {}
 LOG_STATS_CACHE = {"mtime": None, "size": None, "stats": None}
+LOGSCAN_ANALYSIS_CACHE = {"mtime": None, "size": None, "data": None}
+KOMETA_CPU_CACHE = {}
+SYSTEM_CPU_CACHE = {"total": None, "idle": None}
+
+
+def _calculate_process_cpu_percent(proc):
+    try:
+        cpu_times = proc.cpu_times()
+    except Exception:
+        return None
+    total_cpu = cpu_times.user + cpu_times.system
+    now = time.time()
+    entry = KOMETA_CPU_CACHE.get(proc.pid)
+    KOMETA_CPU_CACHE[proc.pid] = {"time": now, "cpu": total_cpu}
+    if not entry:
+        return None
+    elapsed = now - entry.get("time", now)
+    if elapsed <= 0:
+        return None
+    delta_cpu = total_cpu - entry.get("cpu", total_cpu)
+    if delta_cpu < 0:
+        return None
+    cpu_count = psutil.cpu_count(logical=True) or 1
+    percent = (delta_cpu / elapsed) * 100.0 / cpu_count
+    return max(0.0, percent)
+
+
+def _calculate_system_cpu_percent():
+    try:
+        cpu_times = psutil.cpu_times()
+    except Exception:
+        return None
+    total = sum(cpu_times)
+    idle = getattr(cpu_times, "idle", 0)
+    last_total = SYSTEM_CPU_CACHE.get("total")
+    last_idle = SYSTEM_CPU_CACHE.get("idle")
+    SYSTEM_CPU_CACHE["total"] = total
+    SYSTEM_CPU_CACHE["idle"] = idle
+    if last_total is None or last_idle is None:
+        return None
+    delta_total = total - last_total
+    if delta_total <= 0:
+        return None
+    delta_idle = idle - last_idle
+    busy = max(0.0, delta_total - delta_idle)
+    percent = (busy / delta_total) * 100.0
+    return max(0.0, min(100.0, percent))
+
 
 DOTENV = os.path.relpath(os.path.join(helpers.CONFIG_DIR, ".env"))
 load_dotenv(DOTENV, override=True)
@@ -183,6 +231,12 @@ app.config["SESSION_TYPE"] = "cachelib"
 # Flask session cache dir (portable default)
 flask_cache_dir = os.environ.get("QS_FLASK_SESSION_DIR", os.path.join(helpers.CONFIG_DIR, "flask_session"))
 os.makedirs(flask_cache_dir, exist_ok=True)
+
+logscan_reingest_lock = threading.Lock()
+logscan_reingest_state = {
+    "status": "idle",
+    "job_id": None,
+}
 
 app.config["SESSION_CACHELIB"] = FileSystemCache(cache_dir=flask_cache_dir, threshold=500)
 app.config["SESSION_PERMANENT"] = True
@@ -947,6 +1001,8 @@ def step(name):
     if "shutdown_nonce" not in session:
         session["shutdown_nonce"] = secrets.token_urlsafe(16)
     page_info["shutdown_nonce"] = session["shutdown_nonce"]
+    if name == "905-logscan-trends":
+        return redirect(url_for("logscan_trends_page"))
 
     # Generate a placeholder name for "Add Config"
     page_info["new_config_name"] = namesgenerator.get_random_name()
@@ -960,17 +1016,22 @@ def step(name):
 
     file_list = helpers.get_menu_list()
     template_list = helpers.get_template_list()
-    total_steps = len(template_list)
+    progress_excludes = {"sponsor", "logscan-trends"}
+    progress_keys = [key for key in template_list if template_list[key].get("raw_name") not in progress_excludes]
+    total_steps = len(progress_keys)
 
     stem, num, b = helpers.get_bits(name)
 
     try:
-        current_index = list(template_list).index(num)
         item = template_list[num]
     except (ValueError, IndexError, KeyError):
         return f"ERROR WITH NAME {name}; stem, num, b: {stem}, {num}, {b}"
 
-    page_info["progress"] = round((current_index + 1) / total_steps * 100)
+    if num in progress_keys and total_steps:
+        progress_index = progress_keys.index(num)
+    else:
+        progress_index = max(total_steps - 1, 0)
+    page_info["progress"] = round(((progress_index + 1) / total_steps) * 100) if total_steps else 0
     page_info["title"] = item["name"]
     page_info["next_page"] = item["next"]
     page_info["prev_page"] = item["prev"]
@@ -1933,8 +1994,32 @@ def kometa_status():
             # Extra guard: ensure it's actually kometa.py
             cmdline = " ".join(proc.cmdline() or [])
             if "kometa.py" in cmdline:
-                return jsonify(status="running", pid=pid)
-        # If we’re here, it likely ended; try to get a return code
+                started_at_ts = proc.create_time()
+                started_at = datetime.fromtimestamp(started_at_ts).isoformat()
+                elapsed_seconds = max(0, int(time.time() - started_at_ts))
+                cpu_percent = _calculate_process_cpu_percent(proc)
+                mem_info = proc.memory_info()
+                mem_rss_mb = mem_info.rss / (1024 * 1024)
+                mem_percent = proc.memory_percent()
+                system_cpu_percent = _calculate_system_cpu_percent()
+                vm = psutil.virtual_memory()
+                system_mem_used_mb = (vm.total - vm.available) / (1024 * 1024)
+                system_mem_total_mb = vm.total / (1024 * 1024)
+                return jsonify(
+                    status="running",
+                    pid=pid,
+                    started_at=started_at,
+                    started_at_ts=started_at_ts,
+                    elapsed_seconds=elapsed_seconds,
+                    cpu_percent=round(cpu_percent, 1) if cpu_percent is not None else None,
+                    memory_rss_mb=round(mem_rss_mb, 1),
+                    memory_percent=round(mem_percent, 1),
+                    system_cpu_percent=round(system_cpu_percent, 1) if system_cpu_percent is not None else None,
+                    system_memory_percent=round(vm.percent, 1),
+                    system_memory_used_mb=round(system_mem_used_mb, 1),
+                    system_memory_total_mb=round(system_mem_total_mb, 1),
+                )
+        # If we're here, it likely ended; try to get a return code
         try:
             rc = proc.wait(timeout=0.1)
         except psutil.TimeoutExpired:
@@ -1945,8 +2030,10 @@ def kometa_status():
                 os.remove(helpers.get_kometa_pid_file())
             except Exception:
                 pass
+        KOMETA_CPU_CACHE.pop(pid, None)
         return jsonify(status="done", return_code=rc if rc is not None else -1)
     except psutil.NoSuchProcess:
+        KOMETA_CPU_CACHE.pop(pid, None)
         try:
             os.remove(helpers.get_kometa_pid_file())
         except Exception:
@@ -1975,6 +2062,12 @@ def tail_log():
                 max_lines = max(1, min(int(size_param), 20000))
             except Exception:
                 max_lines = 2000
+
+        log_stats = None
+        try:
+            log_stats = log_path.stat()
+        except Exception:
+            log_stats = None
 
         if max_lines:
             with log_path.open("r", encoding="utf-8", errors="replace") as f:
@@ -2031,7 +2124,34 @@ def tail_log():
             LOG_STATS_CACHE.update({"mtime": stats.st_mtime, "size": stats.st_size, "stats": counts})
             return counts
 
-        response = {"log": log_content}
+        log_mtime = log_stats.st_mtime if log_stats else None
+        log_age_seconds = None
+        if log_mtime is not None:
+            log_age_seconds = max(0, int(time.time() - log_mtime))
+
+        kometa_started_at = None
+        pid = helpers.get_kometa_pid()
+        if pid:
+            try:
+                proc = psutil.Process(pid)
+                if proc.is_running() and proc.status() != psutil.STATUS_ZOMBIE:
+                    cmdline = " ".join(proc.cmdline() or [])
+                    if "kometa.py" in cmdline:
+                        kometa_started_at = proc.create_time()
+            except Exception:
+                kometa_started_at = None
+
+        log_is_stale = False
+        if log_mtime is not None and kometa_started_at is not None:
+            log_is_stale = log_mtime < (kometa_started_at - 30)
+
+        response = {
+            "log": log_content,
+            "log_mtime": log_mtime,
+            "log_age_seconds": log_age_seconds,
+            "log_is_stale": log_is_stale,
+            "log_path": str(log_path),
+        }
         if include_stats:
             stats = get_log_stats(log_path)
             if stats:
@@ -2040,6 +2160,471 @@ def tail_log():
         return jsonify(response)
     except Exception as e:
         return jsonify({"error": f"Failed to read log: {str(e)}"}), 500
+
+
+@app.route("/logscan/analyze", methods=["GET"])
+def logscan_analyze():
+    kometa_root = helpers.get_kometa_root_path()
+    log_path = kometa_root / "config" / "logs" / "meta.log"
+    config_name = session.get("config_name")
+    normalized_name = (config_name or "").strip().lower().replace(" ", "_") or "default"
+    config_path = kometa_root / "config" / f"{normalized_name}_config.yml"
+
+    if not log_path.exists():
+        return jsonify({"error": f"Log file not found at: {log_path}"}), 404
+
+    try:
+        stats = log_path.stat()
+    except Exception as e:
+        return jsonify({"error": f"Failed to stat log: {str(e)}"}), 500
+
+    cached = LOGSCAN_ANALYSIS_CACHE
+    if cached.get("mtime") == stats.st_mtime and cached.get("size") == stats.st_size:
+        data = cached.get("data") or {}
+        data["cached"] = True
+        return jsonify(data)
+
+    analyzer = logscan.LogscanAnalyzer()
+    result = analyzer.analyze_log_file(
+        log_path,
+        config_name=config_name,
+        config_path=config_path,
+    )
+    summary = result.get("summary") if isinstance(result, dict) else None
+    if summary and summary.get("run_complete"):
+        database.save_log_run(summary, recommendations=result.get("recommendations"))
+
+    LOGSCAN_ANALYSIS_CACHE.update({"mtime": stats.st_mtime, "size": stats.st_size, "data": result})
+    result["cached"] = False
+    return jsonify(result)
+
+
+@app.route("/logscan/trends", methods=["GET"])
+def logscan_trends():
+    try:
+        limit = int(request.args.get("limit", "50"))
+    except Exception:
+        limit = 50
+    limit = max(1, min(limit, 500))
+    return jsonify({"runs": database.get_log_runs(limit=limit)})
+
+
+@app.route("/logscan/trends/recommendations", methods=["GET"])
+def logscan_trends_recommendations():
+    run_key = request.args.get("run_key")
+    if not run_key:
+        return jsonify({"error": "run_key required"}), 400
+    recommendations = database.get_log_run_recommendations(run_key)
+    return jsonify({"run_key": run_key, "recommendations": recommendations})
+
+
+@app.route("/logscan/trends/reset", methods=["POST"])
+def logscan_trends_reset():
+    database.clear_log_runs()
+    return jsonify({"success": True})
+
+
+def _logscan_reingest_snapshot():
+    with logscan_reingest_lock:
+        return dict(logscan_reingest_state)
+
+
+def _update_logscan_reingest_state(**updates):
+    with logscan_reingest_lock:
+        logscan_reingest_state.update(updates)
+
+
+def _reset_logscan_reingest_state():
+    with logscan_reingest_lock:
+        logscan_reingest_state.clear()
+        logscan_reingest_state.update(
+            {
+                "status": "idle",
+                "job_id": None,
+            }
+        )
+
+
+def _get_logscan_cache_dir():
+    cache_dir = Path(helpers.CONFIG_DIR) / "cache" / "logscan"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    return cache_dir
+
+
+def _perform_logscan_reingest(reset, job_id=None, update_state=True):
+    started_at = datetime.utcnow().isoformat()
+    if update_state:
+        _update_logscan_reingest_state(
+            status="running",
+            job_id=job_id,
+            started_at=started_at,
+            finished_at=None,
+            total=0,
+            scanned=0,
+            ingested=0,
+            duplicates=0,
+            skipped_incomplete=0,
+            skipped_invalid=0,
+            errors=0,
+            current_file=None,
+            missing_people_unique=0,
+            missing_people_logs=0,
+            missing_people_log_ready=False,
+            missing_people_log_lines=0,
+            sample_incomplete=[],
+            sample_errors=[],
+        )
+
+    if reset:
+        database.clear_log_runs()
+
+    kometa_root = helpers.get_kometa_root_path()
+    log_dir = kometa_root / "config" / "logs"
+    if not log_dir.exists():
+        message = f"Log folder not found at: {log_dir}"
+        if update_state:
+            _update_logscan_reingest_state(status="error", error=message, finished_at=datetime.utcnow().isoformat())
+        return {"success": False, "error": message}
+
+    log_files = []
+    for path in log_dir.glob("*meta*.log*"):
+        if not path.is_file():
+            continue
+        suffixes = [suffix.lower() for suffix in path.suffixes]
+        if suffixes and suffixes[-1] in (".gz", ".zip", ".7z"):
+            continue
+        if ".log" not in path.name.lower():
+            continue
+        log_files.append(path)
+
+    def _mtime(value):
+        try:
+            return value.stat().st_mtime
+        except Exception:
+            return 0
+
+    def _extract_fake_people_header(text, max_lines=200):
+        header_lines = []
+        for line in text.splitlines():
+            header_lines.append(line)
+            if "Locating config..." in line:
+                break
+            if len(header_lines) >= max_lines:
+                break
+        return "\n".join(header_lines).rstrip()
+
+    log_files = sorted({path.resolve() for path in log_files}, key=_mtime)
+    total_files = len(log_files)
+    if update_state:
+        _update_logscan_reingest_state(total=total_files)
+
+    analyzer = logscan.LogscanAnalyzer()
+    if log_files:
+        analyzer.preload_people_index(log_files[0])
+    ingested = 0
+    duplicates = 0
+    skipped_incomplete = 0
+    skipped_invalid = 0
+    errors = 0
+    missing_people_unique = set()
+    missing_people_logs = 0
+    missing_people_blocks = []
+    missing_people_seen_blocks = set()
+    missing_people_seen_names = set()
+    missing_people_header = None
+    sample_incomplete = []
+    sample_errors = []
+
+    for idx, path in enumerate(log_files, start=1):
+        if update_state:
+            _update_logscan_reingest_state(current_file=path.name, scanned=max(0, idx - 1))
+        try:
+            content = path.read_text(encoding="utf-8", errors="replace")
+            result = analyzer.analyze_content(
+                content,
+                log_path=path,
+                include_people_scan=True,
+            )
+            summary = result.get("summary") if isinstance(result, dict) else None
+            if not summary:
+                skipped_invalid += 1
+                continue
+            if not summary.get("run_complete"):
+                skipped_incomplete += 1
+                if len(sample_incomplete) < 5:
+                    sample_incomplete.append(path.name)
+                continue
+            missing_people = result.get("missing_people") if isinstance(result, dict) else None
+            if missing_people:
+                missing_people_logs += 1
+                missing_people_unique.update({name.lower() for name in missing_people})
+                if missing_people_header is None:
+                    missing_people_header = _extract_fake_people_header(content)
+            people_items = analyzer.collect_missing_people_lines(content, available_index=analyzer._people_index)
+            if people_items:
+                for item in people_items:
+                    names = {name for name in item.get("names", set()) if name in missing_people_unique}
+                    if not names:
+                        continue
+                    if names.issubset(missing_people_seen_names):
+                        continue
+                    block = item.get("block")
+                    if block and block not in missing_people_seen_blocks:
+                        missing_people_blocks.append(block)
+                        missing_people_seen_blocks.add(block)
+                    missing_people_seen_names.update(names)
+            if database.save_log_run(summary, recommendations=result.get("recommendations")):
+                ingested += 1
+            else:
+                duplicates += 1
+        except Exception as exc:
+            errors += 1
+            if len(sample_errors) < 5:
+                sample_errors.append(f"{path.name}: {exc}")
+        if update_state:
+            _update_logscan_reingest_state(
+                scanned=idx,
+                ingested=ingested,
+                duplicates=duplicates,
+                skipped_incomplete=skipped_incomplete,
+                skipped_invalid=skipped_invalid,
+                errors=errors,
+                missing_people_unique=len(missing_people_unique),
+                missing_people_logs=missing_people_logs,
+                sample_incomplete=sample_incomplete,
+                sample_errors=sample_errors,
+            )
+
+    cache_dir = _get_logscan_cache_dir()
+    missing_people_log = cache_dir / "meta_people_missing.log"
+    missing_people_meta = cache_dir / "meta_people_missing.json"
+    missing_people_log_ready = False
+    missing_people_log_lines = 0
+    if missing_people_blocks:
+        try:
+            missing_people_log_lines = sum(len(block.splitlines()) for block in missing_people_blocks)
+            output_parts = []
+            if missing_people_header:
+                output_parts.append(missing_people_header)
+                missing_people_log_lines += len(missing_people_header.splitlines())
+            output_parts.extend(missing_people_blocks)
+            missing_people_log.write_text("\n".join(output_parts).rstrip() + "\n", encoding="utf-8")
+            missing_people_log_ready = True
+            try:
+                missing_people_meta.write_text(
+                    json.dumps(
+                        {
+                            "missing_people_unique": len(missing_people_unique),
+                            "missing_people_logs": missing_people_logs,
+                            "updated_at": datetime.utcnow().isoformat(),
+                        },
+                        ensure_ascii=True,
+                        indent=2,
+                    )
+                    + "\n",
+                    encoding="utf-8",
+                )
+            except Exception:
+                pass
+        except Exception as exc:
+            errors += 1
+            if len(sample_errors) < 5:
+                sample_errors.append(f"{missing_people_log.name}: {exc}")
+    else:
+        try:
+            if missing_people_log.exists():
+                missing_people_log.unlink()
+            if missing_people_meta.exists():
+                missing_people_meta.unlink()
+        except Exception:
+            pass
+
+    result = {
+        "success": True,
+        "scanned": len(log_files),
+        "ingested": ingested,
+        "duplicates": duplicates,
+        "skipped_incomplete": skipped_incomplete,
+        "skipped_invalid": skipped_invalid,
+        "errors": errors,
+        "missing_people_unique": len(missing_people_unique),
+        "missing_people_logs": missing_people_logs,
+        "missing_people_log_ready": missing_people_log_ready,
+        "missing_people_log_lines": missing_people_log_lines,
+        "sample_incomplete": sample_incomplete,
+        "sample_errors": sample_errors,
+    }
+    if update_state:
+        _update_logscan_reingest_state(
+            status="complete",
+            finished_at=datetime.utcnow().isoformat(),
+            current_file=None,
+            **result,
+        )
+    return result
+
+
+def _run_logscan_reingest_job(job_id, reset):
+    try:
+        with app.app_context():
+            _perform_logscan_reingest(reset=reset, job_id=job_id, update_state=True)
+    except Exception as exc:
+        _update_logscan_reingest_state(
+            status="error",
+            error=str(exc),
+            finished_at=datetime.utcnow().isoformat(),
+            current_file=None,
+        )
+
+
+@app.route("/logscan/trends/reingest/status", methods=["GET"])
+def logscan_trends_reingest_status():
+    job_id = request.args.get("job")
+    snapshot = _logscan_reingest_snapshot()
+    if not snapshot or snapshot.get("status") == "idle":
+        return jsonify({"status": "idle"})
+    if job_id and snapshot.get("job_id") != job_id:
+        return jsonify({"status": "idle"}), 404
+    return jsonify(snapshot)
+
+
+@app.route("/logscan/trends/reingest", methods=["POST"])
+def logscan_trends_reingest():
+    data = request.get_json(silent=True) or {}
+    reset = data.get("reset") is True
+    background = data.get("background") is True
+    if background:
+        snapshot = _logscan_reingest_snapshot()
+        if snapshot.get("status") == "running":
+            return (
+                jsonify(
+                    {
+                        "error": "Reingest already running.",
+                        "job_id": snapshot.get("job_id"),
+                        "status": snapshot.get("status"),
+                    }
+                ),
+                409,
+            )
+        job_id = secrets.token_urlsafe(8)
+        _update_logscan_reingest_state(
+            status="running",
+            job_id=job_id,
+            started_at=datetime.utcnow().isoformat(),
+            finished_at=None,
+            total=0,
+            scanned=0,
+            ingested=0,
+            duplicates=0,
+            skipped_incomplete=0,
+            skipped_invalid=0,
+            errors=0,
+            current_file=None,
+            missing_people_unique=0,
+            missing_people_logs=0,
+            missing_people_log_ready=False,
+            missing_people_log_lines=0,
+            sample_incomplete=[],
+            sample_errors=[],
+        )
+        thread = threading.Thread(target=_run_logscan_reingest_job, args=(job_id, reset), daemon=True)
+        thread.start()
+        return jsonify({"success": True, "job_id": job_id, "status": "running"})
+
+    result = _perform_logscan_reingest(reset=reset, job_id=None, update_state=True)
+    status_code = 200 if result.get("success") else 400
+    return jsonify(result), status_code
+
+
+@app.route("/logscan-trends", methods=["GET"])
+def logscan_trends_page():
+    if "config_name" not in session:
+        session["config_name"] = namesgenerator.get_random_name()
+    if "shutdown_nonce" not in session:
+        session["shutdown_nonce"] = secrets.token_urlsafe(16)
+
+    page_info = {
+        "title": "Logscan Trends",
+        "template_name": "905-logscan-trends",
+        "config_name": session.get("config_name"),
+        "running_port": running_port,
+        "qs_debug": app.config["QS_DEBUG"],
+        "qs_theme": app.config.get("QS_THEME", "kometa"),
+        "qs_optimize_defaults": app.config.get("QS_OPTIMIZE_DEFAULTS", True),
+        "qs_config_history": app.config.get("QS_CONFIG_HISTORY", 0),
+        "shutdown_nonce": session["shutdown_nonce"],
+        "hide_step_nav": False,
+    }
+
+    template_list = helpers.get_menu_list()
+    step_templates = helpers.get_template_list()
+    _, num, _ = helpers.get_bits(page_info["template_name"])
+    item = step_templates.get(num)
+    if item:
+        page_info["next_page"] = item["next"]
+        page_info["prev_page"] = item["prev"]
+        if page_info["next_page"]:
+            next_num = page_info["next_page"].split("-")[0]
+            page_info["next_page_name"] = step_templates.get(next_num, {}).get("name", "Next")
+        else:
+            page_info["next_page_name"] = "Next"
+
+        if page_info["prev_page"]:
+            prev_num = page_info["prev_page"].split("-")[0]
+            page_info["prev_page_name"] = step_templates.get(prev_num, {}).get("name", "Previous")
+        else:
+            page_info["prev_page_name"] = "Previous"
+
+    progress_excludes = {"sponsor", "logscan-trends"}
+    progress_keys = [key for key in step_templates if step_templates[key].get("raw_name") not in progress_excludes]
+    total_steps = len(progress_keys)
+    if num in progress_keys and total_steps:
+        progress_index = progress_keys.index(num)
+    else:
+        progress_index = max(total_steps - 1, 0)
+    page_info["progress"] = round(((progress_index + 1) / total_steps) * 100) if total_steps else 0
+    available_configs = database.get_unique_config_names() or []
+    return render_template(
+        "905-logscan-trends.html",
+        page_info=page_info,
+        template_list=template_list,
+        available_configs=available_configs,
+    )
+
+
+@app.route("/logscan/trends/people-missing", methods=["GET"])
+def logscan_trends_people_missing():
+    missing_log = _get_logscan_cache_dir() / "meta_people_missing.log"
+    if not missing_log.exists():
+        return jsonify({"error": "Missing people log not found."}), 404
+    return send_file(
+        missing_log,
+        mimetype="text/plain",
+        as_attachment=True,
+        download_name="meta_people_missing.log",
+    )
+
+
+@app.route("/logscan/trends/people-missing/status", methods=["GET"])
+def logscan_trends_people_missing_status():
+    cache_dir = _get_logscan_cache_dir()
+    missing_log = cache_dir / "meta_people_missing.log"
+    if not missing_log.exists():
+        return jsonify({"exists": False, "missing_people_unique": 0})
+    meta_path = cache_dir / "meta_people_missing.json"
+    meta = {}
+    if meta_path.exists():
+        try:
+            meta = json.loads(meta_path.read_text(encoding="utf-8")) or {}
+        except Exception:
+            meta = {}
+    return jsonify(
+        {
+            "exists": True,
+            "missing_people_unique": meta.get("missing_people_unique"),
+            "updated_at": meta.get("updated_at"),
+        }
+    )
 
 
 @app.route("/support-info")
@@ -2527,15 +3112,31 @@ def update_kometa():
         data = request.get_json(silent=True) or {}
         qs_branch = data.get("branch") or helpers.detect_git_branch(app.root_path)
         kometa_branch = "master" if qs_branch == "master" else "nightly"
+        force_update = helpers.booler(data.get("force", False))
 
         logs.append(f"🔎 Quickstart branch: {qs_branch}")
         logs.append(f"⚙️ Kometa branch selected: {kometa_branch} (ZIP mode)")
+        if force_update:
+            logs.append("Force update enabled.")
 
-        result = helpers.perform_kometa_update_zip_only(cfg_dir, branch=kometa_branch)
+        result = helpers.perform_kometa_update_zip_only(cfg_dir, branch=kometa_branch, force=force_update)
         logs.extend(result.get("log", []))
         status = 200 if result.get("success") else 500
 
-        return jsonify({"success": result.get("success", False), "log": logs, "qs_branch": qs_branch, "kometa_branch": kometa_branch}), status
+        return (
+            jsonify(
+                {
+                    "success": result.get("success", False),
+                    "log": logs,
+                    "qs_branch": qs_branch,
+                    "kometa_branch": kometa_branch,
+                    "up_to_date": result.get("up_to_date", False),
+                    "skipped": result.get("skipped", False),
+                    "force": force_update,
+                }
+            ),
+            status,
+        )
 
     except Exception as e:
         logs.append(f"Exception during Kometa update: {e}")
