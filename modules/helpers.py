@@ -20,7 +20,7 @@ from modules import persistence
 
 import requests
 from flask import current_app as app
-from flask import has_request_context, session
+from flask import has_app_context, has_request_context, session
 
 try:
     from git import Repo
@@ -437,8 +437,8 @@ def user_visible_name(raw_name):
         formatted_name = "Libraries"
     elif raw_name == "final":
         formatted_name = "Final Validation"
-    elif raw_name == "logscan-trends":
-        formatted_name = "Logscan Trends"
+    elif raw_name == "analytics":
+        formatted_name = "Analytics"
     else:
         if "-" in raw_name:
             formatted_name = raw_name.replace("-", " ").title()
@@ -1745,7 +1745,13 @@ def get_kometa_root_path() -> Path:
         2) session["kometa_root"] (legacy)
         3) <CONFIG_DIR>/kometa  (works with ZIP-only updater)
     """
-    base = app.config.get("KOMETA_ROOT") or session.get("kometa_root") or os.path.join(CONFIG_DIR, "kometa")
+    base = None
+    if has_app_context():
+        base = app.config.get("KOMETA_ROOT")
+    if not base and has_request_context():
+        base = session.get("kometa_root")
+    if not base:
+        base = os.path.join(CONFIG_DIR, "kometa")
     return Path(os.path.normpath(base)).resolve()
 
 
