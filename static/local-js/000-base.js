@@ -1,4 +1,4 @@
-/* global bootstrap, $, location, MutationObserver, requestAnimationFrame */
+/* global bootstrap, $, location, MutationObserver, requestAnimationFrame, PathValidation */
 
 (function () {
   const isDebug = typeof window.QS_DEBUG !== 'undefined' && String(window.QS_DEBUG).toLowerCase() === 'true'
@@ -48,6 +48,16 @@ document.addEventListener('DOMContentLoaded', function () {
 document.addEventListener('DOMContentLoaded', function () {
   // Track user-modified <select> fields
   trackModifiedSelects()
+})
+
+document.addEventListener('DOMContentLoaded', function () {
+  if (typeof PathValidation !== 'undefined' && PathValidation.attach) {
+    PathValidation.attach(document)
+  }
+  const saveError = document.getElementById('qs-save-error')
+  if (saveError && saveError.dataset && saveError.dataset.message) {
+    showToast('error', saveError.dataset.message)
+  }
 })
 
 // Loading spinner functionality
@@ -441,6 +451,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const quickstartRoot = getQuickstartRoot()
     if (!quickstartRoot) {
       throw new Error('Quickstart root not available.')
+    }
+
+    if (typeof PathValidation !== 'undefined' && PathValidation.validateAll) {
+      const validPaths = PathValidation.validateAll(modalEl)
+      if (!validPaths) {
+        throw new Error('Please fix invalid path fields before saving.')
+      }
     }
 
     const payload = {

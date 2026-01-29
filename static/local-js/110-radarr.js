@@ -1,4 +1,4 @@
-/* global $, initialRadarrRootFolderPath, initialRadarrQualityProfile, showSpinner, hideSpinner */
+/* global $, initialRadarrRootFolderPath, initialRadarrQualityProfile, showSpinner, hideSpinner, PathValidation */
 
 $(document).ready(function () {
   const apiKeyInput = document.getElementById('radarr_token')
@@ -98,6 +98,9 @@ function validateRadarrPage () {
   const statusMessage = document.getElementById('statusMessage')
   let isValid = true
   const validationMessages = []
+  const pathsValid = (typeof PathValidation !== 'undefined' && PathValidation.validateAll)
+    ? PathValidation.validateAll()
+    : true
 
   // Skip validation if Radarr is not validated
   if (isValidated !== 'true') {
@@ -113,6 +116,11 @@ function validateRadarrPage () {
   // Validate Quality Profile
   if (!qualityProfile) {
     validationMessages.push('Please select a valid Quality Profile.')
+    isValid = false
+  }
+
+  if (!pathsValid) {
+    validationMessages.push('Please fix invalid path fields before continuing.')
     isValid = false
   }
 

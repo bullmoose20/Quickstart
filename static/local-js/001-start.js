@@ -1,4 +1,4 @@
-/* global showToast, bootstrap, localStorage, $ */
+/* global showToast, bootstrap, localStorage, $, PathValidation */
 
 /* ============================== */
 /* Helpers for the config UI      */
@@ -1025,6 +1025,17 @@ document.addEventListener('DOMContentLoaded', function () {
       savePathsBtn.disabled = true
       savePathsBtn.textContent = 'Saving...'
       setPathsStatus('Validating paths...')
+
+      if (typeof PathValidation !== 'undefined' && PathValidation.validateAll) {
+        const validPaths = PathValidation.validateAll(document)
+        if (!validPaths) {
+          savePathsBtn.disabled = false
+          savePathsBtn.textContent = 'Save Paths'
+          setPathsStatus('Please fix invalid paths.', true)
+          showToast('error', 'Please fix invalid path fields before saving.')
+          return
+        }
+      }
 
       const payload = {
         quickstart_root: window.pageInfo.quickstart_root,
