@@ -4185,6 +4185,7 @@ const OverlayHandler = {
 
         if (cfg.id === 'overlay_ratings' && layer && cfg.container) {
           const refreshRatings = (event) => {
+            if (cfg.container?.dataset?.resetting === 'true') return
             enforceUniqueRatingTypes(cfg)
             if (event && event.target && cfg.container) {
               const targetName = event.target.name || ''
@@ -4202,6 +4203,22 @@ const OverlayHandler = {
                   { ratingKey: 'rating3', imageKey: 'rating3_image' }
                 ]
                 slots.forEach(slot => syncRatingSources(cfg, slot))
+              }
+            }
+            const positionInput = cfg.container.querySelector(`[name="${templateName}[horizontal_position]"]`)
+            if (positionInput) {
+              const raw = (positionInput.value || positionInput.dataset?.default || '').toString().trim().toLowerCase()
+              if (raw === 'left' || raw === 'center' || raw === 'right') {
+                const { vAlign } = parseOrigin(cfg.origin || '')
+                let nextOrigin = ''
+                if (vAlign === 'center') {
+                  nextOrigin = raw === 'center' ? 'center' : `center_${raw}`
+                } else {
+                  nextOrigin = raw === 'center' ? vAlign : `${vAlign}_${raw}`
+                }
+                if (nextOrigin && cfg.origin !== nextOrigin) {
+                  cfg.origin = nextOrigin
+                }
               }
             }
             applyRatingFontDefaults(cfg)
@@ -4249,7 +4266,8 @@ const OverlayHandler = {
             `[name="${templateName}[rating3_font_size]"]`,
             `[name="${templateName}[rating3_font_color]"]`,
             `[name="${templateName}[rating3_stroke_width]"]`,
-            `[name="${templateName}[rating3_stroke_color]"]`
+            `[name="${templateName}[rating3_stroke_color]"]`,
+            `[name="${templateName}[horizontal_position]"]`
           ]
           const inputs = cfg.container.querySelectorAll(ratingSelectors.join(', '))
           inputs.forEach(input => {
