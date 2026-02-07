@@ -1,6 +1,8 @@
 /* global $ */
 
 const validatedWebhooks = {}
+const validatedAtInput = document.getElementById('webhooks_validated_at')
+let webhooksTouched = false
 
 function setWebhookValidated (state, webhookType = null) {
   document.getElementById('webhooks_validated').value = state ? 'true' : 'false'
@@ -17,15 +19,20 @@ function setWebhookValidated (state, webhookType = null) {
 function showCustomInput (selectElement, isValidated) {
   const customInputId = selectElement.id + '_custom'
   console.log(`showCustomInput called for: ${selectElement.id}, isValidated: ${isValidated}`)
+  const customInput = document.getElementById(customInputId)
+  if (!customInput) {
+    console.warn(`Custom input container not found for: ${customInputId}`)
+    return
+  }
   if (selectElement.value === 'custom') {
-    document.getElementById(customInputId).style.display = 'block'
+    customInput.style.display = 'block'
     if (isValidated === true) {
       setWebhookValidated(true, selectElement.id)
     } else {
       setWebhookValidated(false, selectElement.id)
     }
   } else {
-    document.getElementById(customInputId).style.display = 'none'
+    customInput.style.display = 'none'
     validatedWebhooks[selectElement.id] = true
     updateValidationState()
   }
@@ -35,6 +42,9 @@ function updateValidationState () {
   const allValid = Object.values(validatedWebhooks).every(state => state === true)
   console.log('Validation State Updated:', validatedWebhooks, `All Valid: ${allValid}`)
   setWebhookValidated(allValid)
+  if (validatedAtInput && webhooksTouched) {
+    validatedAtInput.value = allValid ? new Date().toISOString() : ''
+  }
 }
 
 $(document).ready(function () {
@@ -61,6 +71,16 @@ $(document).ready(function () {
   } else {
     $('.validate-button').prop('disabled', false)
   }
+
+  document.querySelectorAll('select.form-select, input.custom-webhook-url').forEach((element) => {
+    const markTouched = (event) => {
+      if (event && event.isTrusted === false) return
+      webhooksTouched = true
+      updateValidationState()
+    }
+    element.addEventListener('change', markTouched)
+    element.addEventListener('input', markTouched)
+  })
 
   // Debugging for navigation actions
   document.getElementById('configForm').addEventListener('submit', function (event) {
@@ -91,6 +111,7 @@ function validateWebhook (webhookType) {
   const validateButton = inputGroup.find('.validate-button')
   const webhookTypeFormatted = webhookType.replace(/_/g, ' ').replace(/\b\w/g, function (l) { return l.toUpperCase() })
 
+  webhooksTouched = true
   console.log(`Validating webhook: ${webhookType}, URL: ${webhookUrl}`)
 
   showSpinner(webhookType)

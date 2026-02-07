@@ -1063,6 +1063,19 @@ header.fixed-top {
     margin-left: auto;
 }
 
+.jump-to-validated-icon {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    margin-right: 6px;
+    vertical-align: -2px;
+}
+
+.toast {
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
 .rating-mapping-option-list {
     margin-top: 4px;
     display: flex;
@@ -1121,6 +1134,12 @@ header.fixed-top {
 .rating-mapping-option-link:focus {
     color: var(--theme-text);
     border-color: rgba(255, 255, 255, 0.35);
+}
+
+.validation-status-pill {
+    align-self: flex-start;
+    font-size: 0.65rem;
+    padding: 2px 8px;
 }
 
 .rating-mapping-option-via--header {
@@ -2526,8 +2545,8 @@ div#loading {
     background-color: var(--theme-border);
 }
 
-.progress-bar,
-.progress-bar.bg-success {
+.page-nav .progress-bar,
+.page-nav .progress-bar.bg-success {
     background-color: var(--theme-primary) !important;
 }
 
@@ -2537,6 +2556,48 @@ div#loading {
     line-height: 1;
     font-size: 1rem;
     /* Adjust size if needed */
+}
+
+.page-nav .jump-to-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.page-nav .jump-to-left {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.page-nav .jump-to-left.is-loading .fa-list {
+    opacity: 0.5;
+    animation: jumpPulse 1.2s ease-in-out infinite;
+}
+
+.page-nav .jump-to-left.is-loading .fa-list {
+    display: inline-block;
+}
+
+@keyframes jumpPulse {
+    0%,
+    100% {
+        opacity: 0.45;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+.page-nav .jump-to-left.is-loading #jump-spinner-icon {
+    display: inline-block;
+}
+
+.page-nav .jump-to-label {
+    display: inline-block;
 }
 
 .nav-button:hover {
