@@ -206,6 +206,87 @@ function showToast (type, message) {
   toast.show()
 }
 
+function getValidatedInput () {
+  const form = document.getElementById('configForm') || document.getElementById('final-form') || document
+  if (!form) return null
+  return form.querySelector('input[id$="_validated"]')
+}
+
+function updateValidationCallouts (inputId) {
+  const callouts = document.querySelectorAll('.qs-validation-accordion')
+  if (!callouts.length) return
+
+  callouts.forEach((wrapper) => {
+    const targetId = inputId || wrapper.dataset.qsValidatedInput
+    const validatedInput = targetId ? document.getElementById(targetId) : getValidatedInput()
+    if (!validatedInput) return
+
+    const isValidated = String(validatedInput.value || '').toLowerCase() === 'true'
+    const collapse = wrapper.querySelector('.accordion-collapse')
+    const button = wrapper.querySelector('.accordion-button')
+    if (!collapse || !button) return
+
+    const shouldShow = !isValidated
+    button.classList.toggle('collapsed', !shouldShow)
+    button.setAttribute('aria-expanded', shouldShow ? 'true' : 'false')
+
+    if (typeof bootstrap !== 'undefined' && bootstrap.Collapse) {
+      const instance = bootstrap.Collapse.getOrCreateInstance(collapse, { toggle: false })
+      if (shouldShow) {
+        instance.show()
+      } else {
+        instance.hide()
+      }
+    } else {
+      collapse.classList.toggle('show', shouldShow)
+    }
+  })
+}
+
+function setupValidationCallouts () {
+  const callouts = document.querySelectorAll('.qs-validation-callout')
+  if (!callouts.length) return
+
+  callouts.forEach((alert, index) => {
+    if (alert.closest('.modal')) return
+    if (alert.closest('.qs-validation-accordion')) return
+
+    const validatedInput = getValidatedInput()
+    if (!validatedInput) return
+
+    const isValidated = String(validatedInput.value || '').toLowerCase() === 'true'
+    const heading = alert.querySelector('h6, h4')
+    const title = alert.dataset.qsCalloutTitle || (heading ? heading.textContent.trim() : 'Setup guidance')
+    const accordionId = `qs-validation-accordion-${index}`
+    const collapseId = `qs-validation-collapse-${index}`
+    const headingId = `qs-validation-heading-${index}`
+
+    const wrapper = document.createElement('div')
+    wrapper.className = 'accordion qs-validation-accordion mb-2'
+    wrapper.dataset.qsValidatedInput = validatedInput.id
+    wrapper.innerHTML = `
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="${headingId}">
+          <button class="accordion-button ${isValidated ? 'collapsed' : ''}" type="button"
+            data-bs-toggle="collapse" data-bs-target="#${collapseId}"
+            aria-expanded="${isValidated ? 'false' : 'true'}" aria-controls="${collapseId}">
+            ${title}
+          </button>
+        </h2>
+        <div id="${collapseId}" class="accordion-collapse collapse ${isValidated ? '' : 'show'}"
+          aria-labelledby="${headingId}">
+          <div class="accordion-body p-0"></div>
+        </div>
+      </div>
+    `
+
+    const parent = alert.parentNode
+    parent.insertBefore(wrapper, alert)
+    wrapper.querySelector('.accordion-body').appendChild(alert)
+    alert.classList.add('mb-0')
+  })
+}
+
 const CACHE_EXPIRATION_FIELDS = [
   { id: 'tmdb_cache_expiration', label: 'TMDb cache expiration' },
   { id: 'omdb_cache_expiration', label: 'OMDb cache expiration' },
@@ -262,6 +343,15 @@ function restoreBlankCacheExpirations () {
       .join('<br>')
     showToast('info', message)
   }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  setupValidationCallouts()
+})
+
+window.QSValidationCallouts = {
+  refresh: updateValidationCallouts,
+  setup: setupValidationCallouts
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1128,12 +1218,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const refreshBtn = modalEl.querySelector('#supportInfoRefresh')
   const copyBtn = modalEl.querySelector('#supportInfoCopy')
   const status = modalEl.querySelector('#supportInfoStatus')
+  const isSecureContext = window.isSecureContext
 
   function setStatus (text, isError) {
     if (!status) return
     status.textContent = text || ''
     status.classList.toggle('text-danger', Boolean(isError))
     status.classList.toggle('text-muted', !isError)
+  }
+
+  if (copyBtn && !isSecureContext) {
+    copyBtn.textContent = 'Select'
   }
 
   async function loadSupportInfo () {
@@ -1158,7 +1253,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function fallbackCopy (text) {
+  function fallbackCopy (text, opts = {}) {
+    const showFailureToast = opts.showFailureToast !== false
+    const showSuccessToast = opts.showSuccessToast !== false
     const textarea = document.createElement('textarea')
     textarea.value = text
     textarea.setAttribute('readonly', '')
@@ -1171,16 +1268,30 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const success = document.execCommand('copy')
       if (success) {
-        showToast('success', 'Support info copied to clipboard.')
+        if (showSuccessToast) showToast('success', 'Support info copied to clipboard.')
         return true
       }
-      showToast('error', 'Copy failed. Please copy manually.')
+      if (showFailureToast) showToast('error', 'Copy failed. Please copy manually.')
     } catch (err) {
-      showToast('error', 'Copy failed. Please copy manually.')
+      if (showFailureToast) showToast('error', 'Copy failed. Please copy manually.')
     } finally {
       document.body.removeChild(textarea)
     }
     return false
+  }
+
+  function selectSupportInfoText () {
+    if (!output) return
+    try {
+      const selection = window.getSelection()
+      const range = document.createRange()
+      range.selectNodeContents(output)
+      selection.removeAllRanges()
+      selection.addRange(range)
+      if (typeof output.focus === 'function') output.focus()
+    } catch (err) {
+      // No-op: selection best-effort only.
+    }
   }
 
   async function copySupportInfo () {
@@ -1190,7 +1301,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('warning', 'Nothing to copy yet.')
       return
     }
-    const canUseClipboard = window.isSecureContext && navigator.clipboard && navigator.clipboard.writeText
+    const canUseClipboard = isSecureContext && navigator.clipboard && navigator.clipboard.writeText
     if (canUseClipboard) {
       try {
         await navigator.clipboard.writeText(text)
@@ -1200,7 +1311,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // Fall back to execCommand below.
       }
     }
-    fallbackCopy(text)
+    if (canUseClipboard) {
+      fallbackCopy(text, { showFailureToast: true })
+      return
+    }
+    fallbackCopy(text, { showFailureToast: false, showSuccessToast: false })
+    selectSupportInfoText()
+    showToast('warning', 'Clipboard blocked on non-HTTPS. Text selected; press Ctrl+C to copy.')
   }
 
   modalEl.addEventListener('show.bs.modal', () => {
