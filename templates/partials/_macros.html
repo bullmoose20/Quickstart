@@ -994,7 +994,63 @@ prefix) %}
                                 {% endfor %}
                             </select>
                         </div>
+                        {% set preview_options = [] %}
+                        {% for val in item.options %}
+                        {% if val is mapping and val.image_url %}
+                        {% set show_preview = (val.media_types is not defined) or (library.type in val.media_types) %}
+                        {% if show_preview %}
+                        {% set _ = preview_options.append(val) %}
+                        {% endif %}
+                        {% endif %}
+                        {% endfor %}
+                        {% if preview_options %}
+                        <div class="style-preview-grid mb-2" data-style-preview-grid data-style-select="{{ input_name }}">
+                            {% for val in preview_options %}
+                            <button type="button" class="style-preview-card" data-style-value="{{ val.value }}"
+                                aria-pressed="false">
+                                <div class="style-preview-title">{{ val.label }}</div>
+                                <img src="{{ val.image_url }}" alt="{{ val.label }} style preview" loading="lazy"
+                                    {% if val.fallback_url %}
+                                    data-fallback="{{ val.fallback_url }}"
+                                    onerror="if(this.dataset.fallback){this.src=this.dataset.fallback; this.onerror=null;}"
+                                    {% endif %}>
+                            </button>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% elif item.type == 'string_list' %}
+                        {% set stored_list = data['libraries'].get(input_name) %}
+                        {% if stored_list is string %}
+                        {% set list_json = stored_list %}
+                        {% elif stored_list is sequence %}
+                        {% set list_json = stored_list | tojson %}
+                        {% else %}
+                        {% set list_json = '[]' %}
+                        {% endif %}
+                        <div class="mb-2" data-template-string-list data-hidden-input="{{ input_name }}">
+                            <div class="input-group">
+                                <span class="input-group-text" id="{{ input_name }}_text" style="width: 170px;">
+                                    {{ item.label }}
+                                    {% if item.tooltip %}
+                                    <span class="text-{{ item.tooltip_variant or 'info' }} ms-2" data-bs-toggle="tooltip"
+                                        data-bs-html="true" title="{{ item.tooltip }}">
+                                        <i
+                                            class="bi {% if item.tooltip_variant == 'danger' %}bi-exclamation-circle-fill{% else %}bi-info-circle-fill{% endif %}"></i>
+                                    </span>
+                                    {% endif %}
+                                </span>
+                                <input type="text" class="form-control" id="{{ input_name }}_input"
+                                    aria-describedby="{{ input_name }}_text"
+                                    placeholder="{{ item.placeholder | default('Add value') }}"
+                                    {% if disable_toggle %}disabled{% endif %}>
+                                <button class="btn nav-button" type="button" data-template-string-add
+                                    {% if disable_toggle %}disabled{% endif %}>Add</button>
+                            </div>
+                            <ul class="list-group mt-2" data-template-string-items></ul>
+                            <input type="hidden" id="{{ input_name }}" name="{{ input_name }}" value="{{ list_json }}">
+                        </div>
                         {% elif item.type == 'text_input' %}
+                        {% set is_number_input = item.input_type is defined and item.input_type == 'number' %}
                         <div class="input-group mb-2">
                             <span class="input-group-text" id="{{ input_name }}_text" style="width: 170px;">
                                 {% if item.url %}
@@ -1012,11 +1068,17 @@ prefix) %}
                                 </span>
                                 {% endif %}
                             </span>
-                            <input type="text" class="form-control" id="{{ input_name }}" name="{{ input_name }}"
+                            <input type="{{ 'number' if is_number_input else 'text' }}" class="form-control" id="{{ input_name }}" name="{{ input_name }}"
                                 value="{{ data['libraries'].get(input_name, item.default) | default('', true) }}"
+                                {% if is_number_input %}
+                                min="{{ item.min | default(1) }}" step="{{ item.step | default(1) }}" inputmode="numeric"
+                                data-numeric-only="true"
+                                data-default-value="{{ item.default | default('', true) }}"
+                                {% else %}
                                 minlength="1" pattern="[\x20-\x7E]+"
-                                title="Only ASCII characters allowed (no accents or emojis)" {% if disable_toggle
-                                %}disabled{% endif %}>
+                                title="Only ASCII characters allowed (no accents or emojis)"
+                                {% endif %}
+                                {% if disable_toggle %}disabled{% endif %}>
                         </div>
                         {% endif %}
                         {% endfor %}

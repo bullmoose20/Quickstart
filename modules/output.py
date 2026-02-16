@@ -128,6 +128,40 @@ def _to_number(value):
     return None
 
 
+def _coerce_string_list(values):
+    cleaned = []
+    seen = set()
+    for item in values:
+        if item is None:
+            continue
+        text = str(item).strip()
+        if not text or text in seen:
+            continue
+        cleaned.append(text)
+        seen.add(text)
+    return cleaned
+
+
+def _parse_string_list(value):
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return _coerce_string_list(value)
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped:
+            return []
+        if stripped.startswith("[") and stripped.endswith("]"):
+            try:
+                parsed = json.loads(stripped)
+            except Exception:
+                parsed = None
+            if isinstance(parsed, list):
+                return _coerce_string_list(parsed)
+        return _coerce_string_list([stripped])
+    return _coerce_string_list([value])
+
+
 def _values_match(default, actual):
     default = _normalize_template_value(default)
     actual = _normalize_template_value(actual)
@@ -493,6 +527,53 @@ def optimize_template_variables(config_data, library_types=None):
     return config_data
 
 
+def _collapse_collection_data_template_vars(config_data):
+    if not isinstance(config_data, dict):
+        return config_data
+    libraries_section = config_data.get("libraries", {})
+    libraries = libraries_section.get("libraries")
+    if not isinstance(libraries, dict):
+        return config_data
+    for library_data in libraries.values():
+        if not isinstance(library_data, dict):
+            continue
+        collection_files = library_data.get("collection_files")
+        if not isinstance(collection_files, list):
+            continue
+        for entry in collection_files:
+            if not isinstance(entry, dict):
+                continue
+            template_vars = entry.get("template_variables")
+            if not isinstance(template_vars, dict):
+                continue
+            data_block = {}
+            for key in list(template_vars.keys()):
+                if not isinstance(key, str) or not key.startswith("data_"):
+                    continue
+                subkey = key[5:]
+                if not subkey:
+                    continue
+                value = template_vars.pop(key)
+                if value is None:
+                    continue
+                if isinstance(value, str):
+                    cleaned = value.strip()
+                    if not cleaned:
+                        continue
+                    if cleaned.isdigit():
+                        value = int(cleaned)
+                data_block[subkey] = value
+            if not data_block:
+                continue
+            existing = template_vars.get("data")
+            if isinstance(existing, dict):
+                existing.update(data_block)
+                template_vars["data"] = existing
+            else:
+                template_vars["data"] = data_block
+    return config_data
+
+
 def build_libraries_section(
     movie_libraries,
     show_libraries,
@@ -787,10 +868,17 @@ def build_libraries_section(
                     helpers.ts_log(f"Found {len(all_children)} child template_variables: {all_children}", level="DEBUG")
 
                 if all_children:
-                    file_entry["template_variables"] = {
+                    template_vars = {
                         k: (True if isinstance(v, (bool, str)) and str(v).lower() == "true" else False if isinstance(v, (bool, str)) and str(v).lower() == "false" else v)
                         for k, v in all_children.items()
                     }
+                    if "exclude" in template_vars:
+                        exclude_values = _parse_string_list(template_vars.get("exclude"))
+                        if exclude_values:
+                            template_vars["exclude"] = exclude_values
+                        else:
+                            template_vars.pop("exclude", None)
+                    file_entry["template_variables"] = template_vars
 
                 collection_files.append(file_entry)
 
@@ -2010,6 +2098,7 @@ def build_config(header_style="standard", config_name=None):
     optimize_defaults = helpers.booler(app.config.get("QS_OPTIMIZE_DEFAULTS", True))
     if optimize_defaults:
         config_data = optimize_template_variables(config_data, library_types)
+    config_data = _collapse_collection_data_template_vars(config_data)
 
     # Apply enforce_string_fields to ensure proper formatting
     config_data = helpers.enforce_string_fields(config_data, helpers.STRING_FIELDS)
