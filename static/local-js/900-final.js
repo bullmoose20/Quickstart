@@ -104,10 +104,21 @@ $(document).ready(function () {
     showYAML = plexValid && tmdbValid && libsValid && settValid && yamlValid
 
     const validationMessages = []
-    if (!plexValid) validationMessages.push('Plex settings have not been validated successfully...<br>')
-    if (!tmdbValid) validationMessages.push('TMDb settings have not been validated successfully...<br>')
-    if (!libsValid) validationMessages.push('Libraries page settings have not been validated successfully...<br>')
-    if (!settValid) validationMessages.push('Settings page values have likely been skipped...<br>')
+    const rowFor = (label, href) => {
+      return `
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <span>${label}</span>
+          <a href="${href}" class="ms-2 text-decoration-none">
+            Open page
+            <i class="bi bi-box-arrow-up-right"></i>
+          </a>
+        </div>
+      `
+    }
+    if (!plexValid) validationMessages.push(rowFor('Plex settings have not been validated successfully.', '/step/010-plex'))
+    if (!tmdbValid) validationMessages.push(rowFor('TMDb settings have not been validated successfully.', '/step/020-tmdb'))
+    if (!libsValid) validationMessages.push(rowFor('Libraries page settings have not been validated successfully.', '/step/025-libraries'))
+    if (!settValid) validationMessages.push(rowFor('Settings page values have likely been skipped.', '/step/150-settings'))
 
     $('#run-now').prop('disabled', true)
     $('#run-now-label').text('Run Now')
