@@ -7,7 +7,7 @@ from flask import current_app as app
 from flask import jsonify, flash
 from plexapi.server import PlexServer
 
-from modules import iso, helpers
+from modules import iso, helpers, url_validation
 
 
 def validate_iso3166_1(code):
@@ -24,9 +24,22 @@ def validate_iso639_1(code):
         return None
 
 
+def _validate_service_url(raw_url, label, allow_local=True):
+    if not raw_url:
+        return False, f"{label} URL is required."
+    valid, message = url_validation.validate_url(raw_url, allow_local=allow_local)
+    if not valid:
+        return False, f"{label} URL: {message}"
+    return True, None
+
+
 def validate_plex_server(data):
     plex_url = data.get("plex_url")
     plex_token = data.get("plex_token")
+
+    ok, msg = _validate_service_url(plex_url, "Plex", allow_local=True)
+    if not ok:
+        return jsonify({"valid": False, "error": msg}), 400
 
     # Validate Plex URL and Token
     try:
@@ -87,6 +100,10 @@ def validate_tautulli_server(data):
     tautulli_url = data.get("tautulli_url")
     tautulli_apikey = data.get("tautulli_apikey")
 
+    ok, msg = _validate_service_url(tautulli_url, "Tautulli", allow_local=True)
+    if not ok:
+        return jsonify({"valid": False, "error": msg}), 400
+
     api_url = f"{tautulli_url}/api/v2"
     params = {"apikey": tautulli_apikey, "cmd": "get_tautulli_info"}
 
@@ -101,9 +118,9 @@ def validate_tautulli_server(data):
         is_valid = data.get("response", {}).get("result") == "success"
         # Check if the response contains the expected data
         if is_valid:
-            helpers.ts_log(f"Tautulli connection successful.")
+            helpers.ts_log("Tautulli connection successful.")
         else:
-            helpers.ts_log(f"Tautulli connection failed.")
+            helpers.ts_log("Tautulli connection failed.")
 
     except requests.exceptions.RequestException as e:
         helpers.ts_log(f"Error validating Tautulli connection: {e}", level="ERROR")
@@ -136,7 +153,7 @@ def validate_trakt_server(data):
         )
 
         if response.status_code != 200:
-            return jsonify({"valid": False, "error": f"Trakt Error: Invalid trakt pin, client_id, or client_secret."})
+            return jsonify({"valid": False, "error": "Trakt Error: Invalid trakt pin, client_id, or client_secret."})
 
         validation_response = requests.get(
             f"{base_url}/users/settings",
@@ -149,7 +166,7 @@ def validate_trakt_server(data):
         )
 
         if validation_response.status_code == 423:
-            return jsonify({"valid": False, "error": f"Account is locked; please contact Trakt Support"})
+            return jsonify({"valid": False, "error": "Account is locked; please contact Trakt Support"})
 
         return jsonify(
             {
@@ -166,13 +183,16 @@ def validate_trakt_server(data):
 
     except requests.exceptions.RequestException as e:
         helpers.ts_log(f"Error validating Trakt connection: {e}", level="ERROR")
-        flash(f"Invalid Trakt ID, Secret, or PIN: {e}", "error")
-        return jsonify({"valid": False, "error": f"Invalid Trakt ID, Secret, or PIN: {e}"})
+        flash("Invalid Trakt ID, Secret, or PIN.", "error")
+        return jsonify({"valid": False, "error": "Invalid Trakt ID, Secret, or PIN."})
 
 
 def validate_gotify_server(data):
     gotify_url = data.get("gotify_url")
     gotify_token = data.get("gotify_token")
+    ok, msg = _validate_service_url(gotify_url, "Gotify", allow_local=True)
+    if not ok:
+        return jsonify({"valid": False, "error": msg}), 400
     gotify_url = gotify_url.rstrip("#")
     gotify_url = gotify_url.rstrip("/")
 
@@ -181,7 +201,18 @@ def validate_gotify_server(data):
     try:
         response_json = response.json()
     except JSONDecodeError as e:
-        return jsonify({"valid": False, "error": f"Validation error: {str(e)}"})
+        status = response.status_code
+        content_type = response.headers.get("Content-Type")
+        helpers.ts_log(
+            f"Gotify validation returned non-JSON response " f"(status={status}, content-type={content_type})",
+            level="ERROR",
+        )
+        return jsonify(
+            {
+                "valid": False,
+                "error": f"Gotify returned a non-JSON response (status {status}). Check the base URL.",
+            }
+        )
 
     if response.status_code >= 400:
         return jsonify({"valid": False, "error": f"({response.status_code} [{response.reason}]) {response_json['errorDescription']}"})
@@ -200,6 +231,10 @@ def validate_ntfy_server(data):
     ntfy_url = data.get("ntfy_url")
     ntfy_token = data.get("ntfy_token")
     ntfy_topic = data.get("ntfy_topic")
+
+    ok, msg = _validate_service_url(ntfy_url, "ntfy", allow_local=True)
+    if not ok:
+        return jsonify({"valid": False, "error": msg}), 400
 
     # Ensure the URL is formatted correctly
     ntfy_url = ntfy_url.rstrip("#").rstrip("/")
@@ -241,7 +276,7 @@ def validate_mal_server(data):
     match = re.search("code=([^&]+)", str(mal_localhost_url))
 
     if not match:
-        return jsonify({"valid": False, "error": f"MAL Error: No required code in localhost URL."})
+        return jsonify({"valid": False, "error": "MAL Error: No required code in localhost URL."})
 
     new_authorization = requests.post(
         "https://myanimelist.net/v1/oauth2/token",
@@ -255,7 +290,7 @@ def validate_mal_server(data):
     ).json()
 
     if "error" in new_authorization:
-        return jsonify({"valid": False, "error": f"MAL Error: invalid code."})
+        return jsonify({"valid": False, "error": "MAL Error: invalid code."})
 
     # return success response
     return jsonify(
@@ -269,59 +304,16 @@ def validate_mal_server(data):
     )
 
 
-def validate_anidb_server(data):
-    username = data.get("username")
-    password = data.get("password")
-    client = data.get("client")
-    clientver = data.get("clientver")
-
-    safe_password = urllib.parse.quote_plus(password)
-
-    special_chars = safe_password != password
-
-    # AniDB API endpoint
-    api_url = "http://api.anidb.net:9001/httpapi"
-
-    try:
-        # Make a GET request to AniDB API
-        response = requests.get(
-            api_url,
-            params={
-                "request": "hints",
-                "user": username,
-                "pass": password,
-                "protover": "1",
-                "client": client,
-                "clientver": clientver,
-                "type": "1",
-            },
-        )
-        response_text = response.text
-
-        # Check if the response contains 'hints'
-        if "hints" in response_text:
-            return jsonify({"valid": True})
-        elif '<error code="302">' in response_text:
-            return jsonify({"valid": False, "error": "Client version missing or invalid"})
-        elif '<error code="303">' in response_text:
-            return jsonify({"valid": False, "error": "Invalid username or password"})
-        elif '<error code="500">' in response_text:
-            return jsonify({"valid": False, "error": "You have been banned(likely for 24 hours)"})
-        else:
-            err_msg = f"Authentication failed {'; special characters in the password give the API trouble' if special_chars else ''}"
-            return jsonify({"valid": False, "error": err_msg})
-
-    except requests.exceptions.RequestException as e:
-        # Handle request exceptions (e.g., connection error)
-        return jsonify({"valid": False, "error": str(e)})
-
-
 def validate_webhook_server(data):
     webhook_url = data.get("webhook_url")
     message = data.get("message")
 
     if not webhook_url:
         return jsonify({"error": "Webhook URL is required"}), 400
+
+    ok, msg = _validate_service_url(webhook_url, "Webhook", allow_local=True)
+    if not ok:
+        return jsonify({"error": msg}), 400
 
     message_data = {"content": message}
 
@@ -337,6 +329,10 @@ def validate_radarr_server(data):
     radarr_url = data.get("radarr_url")
     radarr_apikey = data.get("radarr_token")
 
+    ok, msg = _validate_service_url(radarr_url, "Radarr", allow_local=True)
+    if not ok:
+        return jsonify({"valid": False, "error": msg}), 400
+
     status_api_url = f"{radarr_url}/api/v3/system/status?apikey={radarr_apikey}"
     root_folder_api_url = f"{radarr_url}/api/v3/rootfolder?apikey={radarr_apikey}"
     quality_profile_api_url = f"{radarr_url}/api/v3/qualityprofile?apikey={radarr_apikey}"
@@ -348,7 +344,7 @@ def validate_radarr_server(data):
         status_data = response.json()
 
         if "version" not in status_data:
-            helpers.ts_log(f"Radarr connection failed. Invalid response data.")
+            helpers.ts_log("Radarr connection failed. Invalid response data.")
             return jsonify({"valid": False, "error": "Invalid Radarr URL or Apikey"})
 
         # Fetch root folders
@@ -361,7 +357,7 @@ def validate_radarr_server(data):
         response.raise_for_status()
         quality_profiles = response.json()
 
-        helpers.ts_log(f"Radarr connection successful.")
+        helpers.ts_log("Radarr connection successful.")
 
         return jsonify(
             {
@@ -372,7 +368,7 @@ def validate_radarr_server(data):
         )
 
     except requests.exceptions.RequestException as e:
-        helpers.ts_log(f"Error validating Radarr connection: {e}", level="ERROR")
+        helpers.ts_log("Error validating Radarr connection: {e}", level="ERROR")
         flash(f"Invalid Radarr URL or API Key: {str(e)}", "error")
         return jsonify({"valid": False, "error": f"Invalid Radarr URL or Apikey: {str(e)}"})
 
@@ -380,6 +376,10 @@ def validate_radarr_server(data):
 def validate_sonarr_server(data):
     sonarr_url = data.get("sonarr_url")
     sonarr_apikey = data.get("sonarr_token")
+
+    ok, msg = _validate_service_url(sonarr_url, "Sonarr", allow_local=True)
+    if not ok:
+        return jsonify({"valid": False, "error": msg}), 400
 
     status_api_url = f"{sonarr_url}/api/v3/system/status?apikey={sonarr_apikey}"
     root_folder_api_url = f"{sonarr_url}/api/v3/rootfolder?apikey={sonarr_apikey}"
@@ -393,7 +393,7 @@ def validate_sonarr_server(data):
         status_data = response.json()
 
         if "version" not in status_data:
-            helpers.ts_log(f"Sonarr connection failed. Invalid response data.")
+            helpers.ts_log("Sonarr connection failed. Invalid response data.")
             return jsonify({"valid": False, "error": "Invalid Sonarr URL or Apikey"})
 
         # Fetch root folders
@@ -411,7 +411,7 @@ def validate_sonarr_server(data):
         response.raise_for_status()
         language_profiles = response.json()
 
-        helpers.ts_log(f"Sonarr connection successful.")
+        helpers.ts_log("Sonarr connection successful.")
 
         return jsonify(
             {
@@ -431,7 +431,7 @@ def validate_sonarr_server(data):
 def validate_omdb_server(data):
     omdb_apikey = data.get("omdb_apikey")
 
-    api_url = f"http://www.omdbapi.com/?apikey={omdb_apikey}&s=test"
+    api_url = f"https://www.omdbapi.com/?apikey={omdb_apikey}&s=test"
     try:
         response = requests.get(api_url)
         data = response.json()
